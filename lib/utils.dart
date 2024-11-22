@@ -20,7 +20,7 @@ void playSound(BuildContext context, String id) async {
     case "Vibrate only":
       vibrate(context, [0, 500, 500, 500], 1000, true, false);
     case "Default":
-      AudioPlayer().play(AssetSource('assets/sounds/alerts/'));
+      AudioPlayer().play(AssetSource('assets/sounds/alerts/chime.mp3'));
       break;
     default:
       playSound(context, "Default");

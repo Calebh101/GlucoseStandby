@@ -171,17 +171,6 @@ class _HomeState extends State<Home> {
   }
 
   int getTrend(String trend) {
-    /* POSSIBLE VALUES:
-      -3: rapid fall
-      -2: fall
-      -1: slow fall
-      0: steady
-      1: slow rise
-      2: rise
-      3: rapid rise
-      -4: no value
-    */
-
     int newTrend = -4;
 
     switch (trend) {
