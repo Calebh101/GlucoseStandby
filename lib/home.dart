@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:GlucoseStandby/utils/functions.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
@@ -34,6 +35,7 @@ class _HomeState extends State<Home> {
   int autodimcounter = 0;
   Timer? _timer;
   Map alerts = {"time": 0};
+  late AudioPlayer globalPlayer;
   final int _currentValue = 0;
   final int _durationInSeconds = 1;
 
@@ -503,7 +505,7 @@ class _HomeState extends State<Home> {
 
                           if (showGlucoseAlert) {
                             print("Showing glucose alert: ${isSecondsAway(alerts["time"], alertBuffer)}");
-                            playAlert(data["alerts"]["alertsound"]);
+                            playAlert(data["alerts"]["alertsound"], data["alerts"]["alertvolume"]);
                           } else {
                             print("Hiding glucose alert: ${isSecondsAway(alerts["time"], alertBuffer)}");
                           }
@@ -797,8 +799,9 @@ class _HomeState extends State<Home> {
     );
   }
 
-  void dismissAlerts() {
+  void dismissAlerts() async {
     alerts = {"time": DateTime.now().millisecondsSinceEpoch};
+    //player.stop();
     print("dismissed alerts with time: ${alerts["time"]}");
   }
 
@@ -811,7 +814,8 @@ class _HomeState extends State<Home> {
     return status;
   }
 
-  void playAlert(String id) {
-    playSound(context, id);
+  Future<AudioPlayer> playAlert(String id, int volume) async {
+    AudioPlayer player = await playSound(context, id, volume);
+    return player;
   }
 }

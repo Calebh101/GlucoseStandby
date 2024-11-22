@@ -13,19 +13,24 @@ List alertSounds = [
   "Vibrate only",
 ];
 
-void playSound(BuildContext context, String id) async {
+Future<AudioPlayer> playSound(BuildContext context, String id, int volume) async {
   print("Playing sound: $id");
+
+  AudioPlayer player = AudioPlayer();
+  await player.setVolume(volume / 100);
 
   switch (id) {
     case "Vibrate only":
       vibrate(context, [0, 500, 500, 500], 1000, true, false);
     case "Default":
-      AudioPlayer().play(AssetSource('assets/sounds/alerts/chime.mp3'));
+      player.play(AssetSource('sounds/alerts/chime.mp3'));
       break;
     default:
-      playSound(context, "Default");
+      playSound(context, "Default", volume);
       break;
   }
+
+  return player;
 }
 
 void vibrate(BuildContext context, List<int> pattern, int defaultVibrate, bool showWarning, bool onlyUseSingle) async {

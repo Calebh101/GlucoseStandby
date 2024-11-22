@@ -207,7 +207,7 @@ class _SettingsState extends State<Settings> {
                   }
 
                   if (conditions["mode"] == "sound") {
-                    playSound(context, conditions["items"][index]);
+                    playSound(context, conditions["items"][index], conditions["volume"]);
                   }
 
                   if (conditions["immediatelyCloseOnSelect"]) {
@@ -426,6 +426,7 @@ class _SettingsState extends State<Settings> {
                           "min": 1,
                           "max": 100,
                           "divisions": 100,
+                          "volume": data["alertVolume"],
                         });},
                       ),
                     ],
