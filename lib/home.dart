@@ -33,6 +33,8 @@ class _HomeState extends State<Home> {
   int dimTime = 60;
   int dimValue = 0;
   int autodimcounter = 0;
+  bool sleeptimer = false;
+  int sleeptimertime = 60;
   Timer? _timer;
   Map alerts = {"time": 0};
   late AudioPlayer globalPlayer;
@@ -68,17 +70,23 @@ class _HomeState extends State<Home> {
     }
   }
 
-  bool wakelock(status) {
+  bool wakelock(bool status, bool log) {
     try {
       if (status) {
         WakelockPlus.enable();
       } else {
         WakelockPlus.disable();
       }
-      print("wakelock: success: $status");
+
+      if (log) {
+        print("wakelock: success: $status");
+      }
+
       return true;
     } catch (e) {
-      print("wakelock: fail: $status: error: $e");
+      if (log) {
+        print("wakelock: fail: $e");
+      }
       return false;
     }
   }
@@ -159,6 +167,10 @@ class _HomeState extends State<Home> {
           "alertsound": settings["alertsound"],
           "alertvolume": settings["alertvolume"],
         },
+        "sleeptimer": {
+          "sleeptimer": settings["sleeptimer"],
+          "sleeptimertime": settings["sleeptimertime"],
+        },
       };
 
       prevData = data;
@@ -221,6 +233,10 @@ class _HomeState extends State<Home> {
         "superalerts": settings["superalerts"],
         "alertsound": settings["alertsound"],
         "alertvolume": settings["alertvolume"],
+      },
+      "sleeptimer": {
+        "sleeptimer": settings["sleeptimer"],
+        "sleeptimertime": settings["sleeptimertime"],
       },
     };
 
@@ -391,7 +407,7 @@ class _HomeState extends State<Home> {
 
   void init() async {
     await getAllSettings();
-    wakelock(false);
+    wakelock(false, true);
     _subscribeToStream();
     _startTimer();
   }
@@ -401,7 +417,7 @@ class _HomeState extends State<Home> {
     _subscription?.cancel();
     _controller.close();
     _autodimcontroller.close();
-    wakelock(false);
+    wakelock(false, true);
     super.dispose();
   }
 
@@ -487,14 +503,17 @@ class _HomeState extends State<Home> {
                           String formattedNumber = (change >= 0) ? '+$change' : change.toString();
 
                           if(data["autodim"]["stayawake"]) {
-                            wakelock(true);
+                            wakelock(true, true);
                           } else {
-                            wakelock(false);
+                            wakelock(false, true);
                           }
                   
                           allowDim = data["autodim"]["autodimon"];
                           dimTime = data["autodim"]["autodimtime"];
                           dimValue = data["autodim"]["autodimvalue"];
+
+                          sleeptimer = data["sleeptimer"]["sleeptimer"];
+                          sleeptimertime = data["sleeptimer"]["sleeptimertime"];
 
                           int glucoseStatus = getStatusOfGlucose(reading, boundaries);
                           int trendStatus = trend;
@@ -776,6 +795,13 @@ class _HomeState extends State<Home> {
                   if (showTimeLogs) {
                     print("autodim (data): $data");
                   }
+
+                  if (sleeptimer) {
+                    if (data * 60 >= sleeptimertime) {
+                      wakelock(false, false);
+                    }
+                  }
+
                   if (allowDim) {
                     return IgnorePointer(
                       ignoring: true,

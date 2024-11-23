@@ -65,6 +65,8 @@ Future<Map> getAllSettings() async {
       "superalerts": false,
       "alertsound": "Default",
       "alertvolume": 50,
+      "sleeptimer": false,
+      "sleeptimertime": 60,
   };
 
   final prefs = await SharedPreferences.getInstance();
@@ -107,6 +109,7 @@ bool? toBoolean(String value) {
 
 Map verifyOutput(int mode, dynamic input, Map conditions) {
   print("verifying output: $input with mode $mode");
+
   if (mode == 1) { // string
     String validPattern;
     String validCharactersDefault = r'\w\s\-_\~:/\?\&='; // alphanumeric, spaces, basic symbols
