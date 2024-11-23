@@ -271,16 +271,18 @@ class _HomeState extends State<Home> {
   }
 
   String formatDuration(int seconds, bool includeHours) {
-    if (seconds < 0) {
-      seconds = 0;
-    }
+  if (seconds < 0) {
+    seconds = 0;
+  }
 
-    Duration duration = Duration(seconds: seconds);
+  Duration duration = Duration(seconds: seconds);
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     String hours = duration.inHours > 0 ? duration.inHours.toString() : '';
-    String minutes = duration.inMinutes.remainder(60).toString();
+    String minutes;
 
-    if (duration.inHours > 0 || duration.inMinutes.remainder(60) < 10) {
+    if (seconds < 600) {
+      minutes = duration.inMinutes.remainder(60).toString();
+    } else {
       minutes = twoDigits(duration.inMinutes.remainder(60));
     }
 
