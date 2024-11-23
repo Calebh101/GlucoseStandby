@@ -538,6 +538,12 @@ class _SettingsState extends State<Settings> {
                       children: [
                         const SizedBox(height: 10),
                         Setting(
+                          title: "About",
+                          desc: "GlucoseStandby is meant to be an app you can glance at to see your bloodsugar. You can just open the app, turn on Stay Awake, and place your phone or tablet somewhere where you can glance at it. Works best on OLED displays.",
+                          text: "",
+                          action: () {},
+                        ),
+                        Setting(
                           desc: "Author information.",
                           title: "Author",
                           text: "Author: Calebh101",
@@ -561,7 +567,7 @@ class _SettingsState extends State<Settings> {
                         SettingButton(
                           title: "Send Feedback",
                           action: () {
-                            openUrl(context, Uri.parse("mailto:calebh101studios@icloud.com"));
+                            openUrl(context, Uri.parse("mailto:calebh101dev@icloud.com"));
                           },
                           context: context,
                         ),
