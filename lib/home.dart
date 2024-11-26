@@ -2,18 +2,17 @@ import 'dart:math';
 import 'dart:async';
 import 'dart:io';
 
-import 'package:GlucoseStandby/utils/functions.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
+import 'package:personal/dialogue.dart';
 
 import 'package:window_manager/window_manager.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:dexcom/dexcom.dart';
 
-//import 'package:GlucoseStandby/dexcom-test.dart';
 import 'package:GlucoseStandby/utils.dart';
 import 'package:GlucoseStandby/settings.dart';
 

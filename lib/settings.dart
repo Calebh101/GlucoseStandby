@@ -1,14 +1,10 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-
+import 'package:personal/dialogue.dart';
+import 'package:personal/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'package:GlucoseStandby/login.dart';
-
 import 'package:GlucoseStandby/utils.dart';
-import 'package:GlucoseStandby/utils/functions.dart';
-import 'package:GlucoseStandby/utils/widgets.dart';
 
 class Settings extends StatefulWidget {
   const Settings({super.key});
@@ -266,46 +262,6 @@ class _SettingsState extends State<Settings> {
       await prefs.setStringList(key, value);
     } else {
       throw ArgumentError("Unsupported value type: ${value.runtimeType}");
-    }
-  }
-
-  Future<void> openUrl(BuildContext context, Uri url) async {
-    if (!kIsWeb) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Open Link?'),
-            content: Text('Do you want to open "$url"? This will open in your default browser.'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Close the dialog
-                },
-                child: const Text('No'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Close the dialog
-                  _launchURL(url); // Open the URL if "Yes" is pressed
-                },
-                child: const Text('Yes'),
-              ),
-            ],
-          );
-        },
-      );
-    } else {
-      Navigator.of(context).pop();
-      _launchURL(url);
-    }
-  }
-
-  Future<void> _launchURL(Uri url) async {
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
-    } else {
-      throw 'Could not launch $url';
     }
   }
 
@@ -567,7 +523,7 @@ class _SettingsState extends State<Settings> {
                         SettingButton(
                           title: "Send Feedback",
                           action: () {
-                            openUrl(context, Uri.parse("mailto:calebh101dev@icloud.com"));
+                            openUrlConf(context, Uri.parse("mailto:calebh101dev@icloud.com"));
                           },
                           context: context,
                         ),
