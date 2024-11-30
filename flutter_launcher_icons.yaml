@@ -9,7 +9,6 @@ flutter_launcher_icons:
   ios: true
   remove_alpha_ios: true
   image_path_ios_dark_transparent: "assets/app/icon/icondark.png"
-  image_path_ios_tinted_grayscale: "assets/app/icon/icondark.png"
   desaturate_tinted_to_grayscale_ios: true
 
   web:
