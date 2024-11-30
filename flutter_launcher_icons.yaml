@@ -1,5 +1,5 @@
 flutter_launcher_icons:
-  image_path: "assets/app/icon/icon.png"
+  image_path: "assets/app/icon/iconlight.png"
 
   android: "launcher_icon"
   min_sdk_android: 21
@@ -9,6 +9,7 @@ flutter_launcher_icons:
   ios: true
   remove_alpha_ios: true
   image_path_ios_dark_transparent: "assets/app/icon/icondark.png"
+  image_path_ios_tinted_grayscale: "assets/app/icon/icon.png"
   desaturate_tinted_to_grayscale_ios: true
 
   web:
