@@ -14,19 +14,19 @@ flutter_launcher_icons:
 
   web:
     generate: true
-    image_path: "assets/app/icon/icon.png"
-    background_color: "#hexcode"
-    theme_color: "#hexcode"
+    image_path: "assets/app/icon/splash.png"
+    background_color: "#000000"
+    theme_color: "#000000"
 
   windows:
     generate: true
-    image_path: "assets/app/icon/icon.png"
+    image_path: "assets/app/icon/splash.png"
     icon_size: 48
 
   macos:
     generate: true
-    image_path: "assets/app/icon/icon.png"
+    image_path: "assets/app/icon/splash.png"
 
   linux:
     generate: true
-    image_path: "assets/app/icon/icon.png"
+    image_path: "assets/app/icon/splash.png"

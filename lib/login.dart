@@ -37,9 +37,11 @@ class _LoginPageState extends State<LoginPage> {
       } else {
         print("Account type: $dexcom");
         await dexcom.verifyLogin(username, password);
+        await dexcom.getGlucoseReadings();
       }
 
       print("Verified login with dexcom: $dexcom");
+
       await prefs.setString('username', username);
       await prefs.setString('password', password);
     
