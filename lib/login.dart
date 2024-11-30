@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:GlucoseStandby/utils/functions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dexcom/dexcom.dart';
 
