@@ -18,7 +18,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  
+
   bool alwaysShowBack = false;
 
   Future<void> _saveCredentials() async {
@@ -28,11 +28,12 @@ class _LoginPageState extends State<LoginPage> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var dexcom = Dexcom(username, password);
     showSnackBar(context, "Loading...");
-  
+
     try {
       if (username == "sandbox" && password == "password") {
         print("Account type: sandbox");
-        showSnackBar(context, 'You are using a sandbox data source. This uses random numbers to simulate glucose readings. Even though the readings may not be accurate, the functionality of the app is the same.');
+        showSnackBar(context,
+            'You are using a sandbox data source. This uses random numbers to simulate glucose readings. Even though the readings may not be accurate, the functionality of the app is the same.');
         await Future.delayed(Duration(seconds: 3));
       } else {
         print("Account type: $dexcom");
@@ -44,12 +45,18 @@ class _LoginPageState extends State<LoginPage> {
 
       await prefs.setString('username', username);
       await prefs.setString('password', password);
-    
-      showSnackBar(context, 'Credentials saved! Please reload the home page to use your credentials.');
+
+      showSnackBar(context,
+          'Credentials saved! Please reload the home page to use your credentials.');
 
       Navigator.pop(context, true);
     } catch (e) {
-      showAlertDialogue(context, "Login error:", "An error occurred while logging in: $e (did you enter the correct username and password?)", false, {"show": true, "text": e});
+      showAlertDialogue(
+          context,
+          "Login error:",
+          "An error occurred while logging in: $e (did you enter the correct username and password?)",
+          false,
+          {"show": true, "text": e});
     }
   }
 
@@ -59,12 +66,14 @@ class _LoginPageState extends State<LoginPage> {
       appBar: AppBar(
         title: const Text('Log In With Dexcom'),
         centerTitle: true,
-        leading: widget.showBack || alwaysShowBack ? IconButton(
-          onPressed: () {
-            Navigator.pop(context, false);
-          },
-          icon: const Icon(Icons.arrow_back),
-        ) : const SizedBox.shrink(),
+        leading: widget.showBack || alwaysShowBack
+            ? IconButton(
+                onPressed: () {
+                  Navigator.pop(context, false);
+                },
+                icon: const Icon(Icons.arrow_back),
+              )
+            : const SizedBox.shrink(),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -72,18 +81,14 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                "Dexcom Credentials of Sharer",
-                style: TextStyle(
-                  fontSize: 20,
-                )
-              ),
-              const Text(
-                "Not Follower",
-                style: TextStyle(
-                  fontSize: 14,
-                )
-              ),
+              const Text("Dexcom Credentials of Sharer",
+                  style: TextStyle(
+                    fontSize: 20,
+                  )),
+              const Text("Not Follower",
+                  style: TextStyle(
+                    fontSize: 14,
+                  )),
               const SizedBox(height: 16),
               TextField(
                 controller: _usernameController,
@@ -107,12 +112,10 @@ class _LoginPageState extends State<LoginPage> {
                 child: const Text('Submit'),
               ),
               const SizedBox(height: 16),
-              const Text(
-                "Why, exactly?",
-                style: TextStyle(
-                  fontSize: 20,
-                )
-              ),
+              const Text("Why, exactly?",
+                  style: TextStyle(
+                    fontSize: 20,
+                  )),
               const SizedBox(height: 16),
               const Text(
                 "We use your Dexcom credentials to fetch data from Dexcom's servers, not ours. Your credentials are never sent to any other server that's not Dexcom's, including ours. Your credentials are stored locally using Flutter's SharedPreferences library.",

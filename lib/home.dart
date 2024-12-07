@@ -27,8 +27,10 @@ class _HomeState extends State<Home> {
   Random random = Random();
   int readingTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
   Map prevData = {};
+  bool sleepTimerActive = false;
   bool fullscreen = false;
   bool allowDim = false;
+  bool showValueTimer = false;
   int dimTime = 60;
   int dimValue = 0;
   int autodimcounter = 0;
@@ -57,7 +59,7 @@ class _HomeState extends State<Home> {
   int maxSeconds = 7200;
   bool quickUndim = false;
   int buffer = 10;
-  
+
   // debug options
   bool showTimeLogs = false;
   bool showAutoDimTimer = false;
@@ -111,12 +113,15 @@ class _HomeState extends State<Home> {
     var dexcom = Dexcom(settings["username"], settings["password"]);
     List<dynamic>? response;
 
-    if (settings["username"] == "sandbox" && settings["password"] == "password") {
+    if (settings["username"] == "sandbox" &&
+        settings["password"] == "password") {
       showSampleWarning = false;
       return await fetchSampleData(true);
     }
 
-    if (settings["username"] == "" || settings["password"] == "" || forceLogin) {
+    if (settings["username"] == "" ||
+        settings["password"] == "" ||
+        forceLogin) {
       showSampleWarning = true;
       return await fetchSampleData(false);
     } else {
@@ -124,17 +129,23 @@ class _HomeState extends State<Home> {
     }
 
     try {
-      response = await dexcom.getGlucoseReadings(maxCount: 2, minutes: maxSeconds ~/ 60);
+      response = await dexcom.getGlucoseReadings(
+          maxCount: 2, minutes: maxSeconds ~/ 60);
       print("Read data with dexcom: $dexcom");
     } catch (e) {
-      showAlertDialogue(context, "Login error:", "An error occurred while logging in: $e: Did you enter the correct username and password? If not, go to Settings > Log In With Dexcom.", false, {"show": true, "text": e});
+      showAlertDialogue(
+          context,
+          "Login error:",
+          "An error occurred while logging in: $e: Did you enter the correct username and password? If not, go to Settings > Log In With Dexcom.",
+          false,
+          {"show": true, "text": e});
     }
 
     if (response != null) {
       String wtString = response[0]['ST'];
       RegExp regExp = RegExp(r'Date\((\d+)\)');
       Match? match = regExp.firstMatch(wtString);
-      
+
       if (match != null) {
         int milliseconds = int.parse(match.group(1)!);
         int seconds = milliseconds ~/ 1000;
@@ -143,7 +154,7 @@ class _HomeState extends State<Home> {
       } else {
         print('Invalid date format');
       }
-      
+
       Map<String, dynamic> data = {
         "bg": response[0]["Value"],
         "trend": getTrend(response[0]["Trend"]),
@@ -187,17 +198,39 @@ class _HomeState extends State<Home> {
     int newTrend = -4;
 
     switch (trend) {
-      case "Flat": newTrend = 0; break;
-      case "FortyFiveDown": newTrend = -1; break;
-      case "FortyFiveUp": newTrend = 1; break;
-      case "SingleDown": newTrend = -2; break;
-      case "SingleUp": newTrend = 2; break;
-      case "DoubleDown": newTrend = -3; break;
-      case "DoubleUp": newTrend = 3; break;
-      case "None": newTrend = -4; break;
-      case "NonComputable": newTrend = -4; break;
-      case "RateOutOfRange": newTrend = -4; break;
-      default: newTrend = -4; break;
+      case "Flat":
+        newTrend = 0;
+        break;
+      case "FortyFiveDown":
+        newTrend = -1;
+        break;
+      case "FortyFiveUp":
+        newTrend = 1;
+        break;
+      case "SingleDown":
+        newTrend = -2;
+        break;
+      case "SingleUp":
+        newTrend = 2;
+        break;
+      case "DoubleDown":
+        newTrend = -3;
+        break;
+      case "DoubleUp":
+        newTrend = 3;
+        break;
+      case "None":
+        newTrend = -4;
+        break;
+      case "NonComputable":
+        newTrend = -4;
+        break;
+      case "RateOutOfRange":
+        newTrend = -4;
+        break;
+      default:
+        newTrend = -4;
+        break;
     }
 
     return newTrend;
@@ -239,7 +272,8 @@ class _HomeState extends State<Home> {
       },
     };
 
-    readingTime = (DateTime.now().millisecondsSinceEpoch ~/ 1000) - (random.nextInt(6) + 4);
+    readingTime = (DateTime.now().millisecondsSinceEpoch ~/ 1000) -
+        (random.nextInt(6) + 4);
     prevData = data;
     return data;
   }
@@ -282,15 +316,16 @@ class _HomeState extends State<Home> {
   }
 
   int getTimeDifference(int recordedTimeInSeconds) {
-    return (DateTime.now().millisecondsSinceEpoch ~/ 1000) - recordedTimeInSeconds;
+    return (DateTime.now().millisecondsSinceEpoch ~/ 1000) -
+        recordedTimeInSeconds;
   }
 
   String formatDuration(int seconds, bool includeHours) {
-  if (seconds < 0) {
-    seconds = 0;
-  }
+    if (seconds < 0) {
+      seconds = 0;
+    }
 
-  Duration duration = Duration(seconds: seconds);
+    Duration duration = Duration(seconds: seconds);
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     String hours = duration.inHours > 0 ? duration.inHours.toString() : '';
     String minutes;
@@ -324,7 +359,8 @@ class _HomeState extends State<Home> {
     } else {
       if (Platform.isAndroid || Platform.isIOS) {
         if (fullscreenS) {
-          SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+              overlays: []);
         } else {
           SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
               overlays: SystemUiOverlay.values);
@@ -366,9 +402,19 @@ class _HomeState extends State<Home> {
   void _startTimer() {
     _stopTimer(); // Ensure no duplicate timers
     _timer = Timer.periodic(Duration(seconds: _durationInSeconds), (timer) {
-    autodimcounter++;
-    _autodimcontroller.add(_currentValue);
+      autodimcounter++;
+      _autodimcontroller.add(_currentValue);
     });
+  }
+
+  void resetStayAwake() {
+    sleepTimerActive = false;
+  }
+
+  void touchScreen() {
+    print("screen contact");
+    resetAutoDimTimer();
+    resetStayAwake();
   }
 
   void _stopTimer() {
@@ -424,44 +470,69 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        resetAutoDimTimer();
+        touchScreen();
       },
       child: Scaffold(
-        body: Stack(
-          children: [
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  FutureBuilder<Map<String, dynamic>>(
-                    future: fetchData(),
-                    builder: (context, snapshot) {
-                      double size;
-                      double maxSize = 3;
-                      bool forceUseWidth = true;
-                      Size screenSize = MediaQuery.of(context).size;
+        body: Stack(children: [
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                FutureBuilder<Map<String, dynamic>>(
+                  future: fetchData(),
+                  builder: (context, snapshot) {
+                    double size;
+                    double maxSize = 3;
+                    bool forceUseWidth = true;
+                    Size screenSize = MediaQuery.of(context).size;
 
-                      // ignore: dead_code
-                      if ((screenSize.width > screenSize.height) && !forceUseWidth) {
-                        size = screenSize.height;
+                    // ignore: dead_code
+                    if ((screenSize.width > screenSize.height) &&
+                        !forceUseWidth) {
+                      size = screenSize.height;
+                    } else {
+                      size = screenSize.width;
+                    }
+
+                    size = size * 0.003;
+                    size = size > maxSize ? maxSize : size;
+                    print("size: $size");
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const CircularProgressIndicator();
+                    } else if (snapshot.hasError) {
+                      print(
+                          "Error with data: ${snapshot.error}: ${snapshot.data}");
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            "No Data",
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: 12 * size,
+                            ),
+                          ),
+                        ],
+                      );
+                    } else {
+                      Map data;
+                      if (snapshot.hasData &&
+                          snapshot.data != null &&
+                          snapshot.data != "") {
+                        data = snapshot.data!;
                       } else {
-                        size = screenSize.width;
+                        data = {"error": "no data available"};
                       }
-
-                      size = size * 0.003;
-                      size = size > maxSize ? maxSize : size;
-                      print("size: $size");
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const CircularProgressIndicator();
-                      } else if (snapshot.hasError) {
-                        print("Error with data: ${snapshot.error}: ${snapshot.data}");
+                      if (data["error"] != null) {
+                        print("Error with data: $data");
                         return Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
-                              "No Data",
+                              "Data Error",
                               style: TextStyle(
                                 color: Colors.red,
                                 fontSize: 12 * size,
@@ -470,358 +541,372 @@ class _HomeState extends State<Home> {
                           ],
                         );
                       } else {
-                        Map data;
-                        if (snapshot.hasData &&
-                            snapshot.data != null &&
-                            snapshot.data != "") {
-                          data = snapshot.data!;
+                        int reading = data["bg"];
+                        int previousreading = data["previousreading"];
+                        int change = reading - previousreading;
+                        int trend = data["trend"] ??= -4;
+                        Map boundaries = data["boundaries"];
+                        String formattedNumber =
+                            (change >= 0) ? '+$change' : change.toString();
+
+                        if (data["autodim"]["stayawake"] && !sleepTimerActive) {
+                          wakelock(true, true);
                         } else {
-                          data = {"error": "no data available"};
+                          wakelock(false, true);
                         }
-                        if (data["error"] != null) {
-                          print("Error with data: $data");
-                          return Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Text(
-                                "Data Error",
-                                style: TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 12 * size,
-                                ),
-                              ),
-                            ],
-                          );
+
+                        allowDim = data["autodim"]["autodimon"];
+                        dimTime = data["autodim"]["autodimtime"];
+                        dimValue = data["autodim"]["autodimvalue"];
+
+                        sleeptimer = data["sleeptimer"]["sleeptimer"];
+                        sleeptimertime = data["sleeptimer"]["sleeptimertime"];
+
+                        int glucoseStatus =
+                            getStatusOfGlucose(reading, boundaries);
+                        int trendStatus = trend;
+                        int alertBuffer = 1800; // seconds
+
+                        print('checkpoint');
+                        print("alerts: $alerts");
+
+                        bool showGlucoseAlert = (data["alerts"]["superalerts"]
+                                ? (glucoseStatus.abs() >= 2 ||
+                                    trendStatus.abs() >= 3)
+                                : (glucoseStatus.abs() >= 1 ||
+                                    trendStatus.abs() >= 2)) &&
+                            data["alerts"]["allowalerts"] &&
+                            (isSecondsAway(alerts["time"], alertBuffer) ||
+                                alerts["time"] == 0) &&
+                            showGlucoseWarning;
+
+                        if (showGlucoseAlert) {
+                          print(
+                              "Showing glucose alert: ${isSecondsAway(alerts["time"], alertBuffer)}");
+                          playAlert(data["alerts"]["alertsound"],
+                              data["alerts"]["alertvolume"]);
                         } else {
-                          int reading = data["bg"];
-                          int previousreading = data["previousreading"];
-                          int change = reading - previousreading;
-                          int trend = data["trend"] ??= -4;
-                          Map boundaries = data["boundaries"];
-                          String formattedNumber = (change >= 0) ? '+$change' : change.toString();
+                          print(
+                              "Hiding glucose alert: ${isSecondsAway(alerts["time"], alertBuffer)}");
+                        }
 
-                          if(data["autodim"]["stayawake"]) {
-                            wakelock(true, true);
-                          } else {
-                            wakelock(false, true);
-                          }
-                  
-                          allowDim = data["autodim"]["autodimon"];
-                          dimTime = data["autodim"]["autodimtime"];
-                          dimValue = data["autodim"]["autodimvalue"];
-
-                          sleeptimer = data["sleeptimer"]["sleeptimer"];
-                          sleeptimertime = data["sleeptimer"]["sleeptimertime"];
-
-                          int glucoseStatus = getStatusOfGlucose(reading, boundaries);
-                          int trendStatus = trend;
-                          int alertBuffer = 1800; // seconds
-
-                          print('checkpoint');
-                          print("alerts: $alerts");
-
-                          bool showGlucoseAlert = (data["alerts"]["superalerts"] ? (glucoseStatus.abs() >= 2 || trendStatus.abs() >= 3) : (glucoseStatus.abs() >= 1 || trendStatus.abs() >= 2)) && data["alerts"]["allowalerts"] && (isSecondsAway(alerts["time"], alertBuffer) || alerts["time"] == 0) && showGlucoseWarning;
-
-                          if (showGlucoseAlert) {
-                            print("Showing glucose alert: ${isSecondsAway(alerts["time"], alertBuffer)}");
-                            playAlert(data["alerts"]["alertsound"], data["alerts"]["alertvolume"]);
-                          } else {
-                            print("Hiding glucose alert: ${isSecondsAway(alerts["time"], alertBuffer)}");
-                          }
-
-                          return Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Column(children: [
-                                if (showSampleWarning)
-                                    Container(
-                                      height: 100,
-                                      width: double.infinity,
-                                      child: Stack(
-                                        children: [
-                                          Positioned(
-                                            bottom: 0,
-                                            left: 0,
-                                            right: 0,
-                                            child: Container(
-                                                color: Colors.red,
-                                                width: double.infinity,
-                                                padding: EdgeInsets.all(16.0),
-                                                child: Text(
-                                                    "Warning: You are currently using sample data. Please log in with Dexcom to view your glucose data.",
-                                                    style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 12
-                                                    ),
-                                                    textAlign: TextAlign.center,
-                                                ),
-                                            ),
-                                          ),
-                                        ]
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Column(children: [
+                              if (showSampleWarning)
+                                Container(
+                                  height: 100,
+                                  width: double.infinity,
+                                  child: Stack(children: [
+                                    Positioned(
+                                      bottom: 0,
+                                      left: 0,
+                                      right: 0,
+                                      child: Container(
+                                        color: Colors.red,
+                                        width: double.infinity,
+                                        padding: EdgeInsets.all(16.0),
+                                        child: Text(
+                                          "Warning: You are currently using sample data. Please log in with Dexcom to view your glucose data.",
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12),
+                                          textAlign: TextAlign.center,
+                                        ),
                                       ),
                                     ),
+                                  ]),
+                                ),
                               if (showGlucoseAlert)
                                 ValueListenableBuilder<bool>(
-                                  valueListenable: isVisible,
-                                  builder: (context, alertVisible, child) {
-                                    return Visibility(
-                                      visible: alertVisible,
-                                      child: Container(
-                                        height: 100,
-                                        width: double.infinity,
-                                        child: Stack(
-                                          children: [
-                                            Positioned(
-                                              bottom: 0,
-                                              left: 0,
-                                              right: 0,
-                                              child: Container(
-                                                  color:
-                                                    glucoseStatus.abs() >= 2 || trendStatus.abs() >= 2 ? Colors.red : Colors.orange,
+                                    valueListenable: isVisible,
+                                    builder: (context, alertVisible, child) {
+                                      return Visibility(
+                                        visible: alertVisible,
+                                        child: Container(
+                                          height: 100,
+                                          width: double.infinity,
+                                          child: Stack(
+                                            children: [
+                                              Positioned(
+                                                bottom: 0,
+                                                left: 0,
+                                                right: 0,
+                                                child: Container(
+                                                  color: glucoseStatus.abs() >=
+                                                              2 ||
+                                                          trendStatus.abs() >= 2
+                                                      ? Colors.red
+                                                      : Colors.orange,
                                                   width: double.infinity,
                                                   padding: EdgeInsets.all(16.0),
                                                   child: Row(
-                                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .center,
                                                     children: [
                                                       SizedBox.shrink(),
                                                       Text(
-                                                          getGlucoseMessage(glucoseStatus, trendStatus)["message"],
-                                                          style: TextStyle(
-                                                              color: Colors.white,
-                                                              fontSize: 16
-                                                          ),
-                                                          textAlign: TextAlign.center,
+                                                        getGlucoseMessage(
+                                                                glucoseStatus,
+                                                                trendStatus)[
+                                                            "message"],
+                                                        style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 16),
+                                                        textAlign:
+                                                            TextAlign.center,
                                                       ),
                                                       TextButton(
-                                                        onPressed:() {
-                                                          isVisible.value = !isVisible.value;
-                                                          dismissAlerts();
-                                                        },
-                                                        child: Text(
-                                                          "Dismiss",
-                                                          style: TextStyle(
-                                                            fontSize: 16,
-                                                            color: Colors.white,
-                                                          ),
-                                                        )
-                                                      )
+                                                          onPressed: () {
+                                                            isVisible.value =
+                                                                !isVisible
+                                                                    .value;
+                                                            dismissAlerts();
+                                                          },
+                                                          child: Text(
+                                                            "Dismiss",
+                                                            style: TextStyle(
+                                                              fontSize: 16,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                          ))
                                                     ],
                                                   ),
+                                                ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                ),
-                              ]),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    reading.toString(),
-                                    style: TextStyle(
-                                      fontSize: 50 * size,
-                                      color: decideColorForReading(reading, boundaries),
-                                    ),
-                                  ),
-                                  Visibility(
-                                    visible: trend != -4,
-                                    child: Row(
-                                      children: [
-                                        Stack(
-                                          children: [
-                                            Transform.rotate(
-                                              angle: decideRotation(1, trend),
-                                              child: Icon(Icons.arrow_forward,
-                                                  size: 50.0 * size, color: decideColorForArrow(1, trend)),
-                                            ),
-                                            if (trend == 3 || trend == -3)
-                                              Row(
-                                                children: [
-                                                  SizedBox(width: 30 * size),
-                                                  Icon(
-                                                    trend == 3
-                                                        ? Icons.arrow_upward
-                                                        : Icons.arrow_downward,
-                                                    size: 50.0 * size,
-                                                    color: decideColorForArrow(1, trend),
-                                                  ),
-                                                ],
-                                              ),
-                                          ],
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Text(formattedNumber,
-                                              style: TextStyle(
-                                                color: change.abs() >= 15
-                                                    ? Colors.red
-                                                    : change.abs() >= 10
-                                                        ? Colors.orange
-                                                        : change.abs() >= 5
-                                                            ? Colors.yellow
-                                                            : Colors.green,
-                                                fontSize: 12 * size,
-                                              )),
-                                          Text(
-                                            " from ",
-                                            style: TextStyle(
-                                              fontSize: 12 * size,
-                                            ),
+                                            ],
                                           ),
-                                          Text(previousreading.toString(),
-                                              style: TextStyle(
-                                                color: decideColorForReading(previousreading, boundaries),
-                                                fontSize: 12 * size,
-                                              )),
+                                        ),
+                                      );
+                                    }),
+                            ]),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  reading.toString(),
+                                  style: TextStyle(
+                                    fontSize: 50 * size,
+                                    color: decideColorForReading(
+                                        reading, boundaries),
+                                  ),
+                                ),
+                                Visibility(
+                                  visible: trend != -4,
+                                  child: Row(
+                                    children: [
+                                      Stack(
+                                        children: [
+                                          Transform.rotate(
+                                            angle: decideRotation(1, trend),
+                                            child: Icon(Icons.arrow_forward,
+                                                size: 50.0 * size,
+                                                color: decideColorForArrow(
+                                                    1, trend)),
+                                          ),
+                                          if (trend == 3 || trend == -3)
+                                            Row(
+                                              children: [
+                                                SizedBox(width: 30 * size),
+                                                Icon(
+                                                  trend == 3
+                                                      ? Icons.arrow_upward
+                                                      : Icons.arrow_downward,
+                                                  size: 50.0 * size,
+                                                  color: decideColorForArrow(
+                                                      1, trend),
+                                                ),
+                                              ],
+                                            ),
                                         ],
-                                      ),
-                                      StreamBuilder<int>(
-                                        stream: timeSinceLastReading,
-                                        builder: (BuildContext context,
-                                            AsyncSnapshot<int> snapshot) {
-                                          if (snapshot.connectionState ==
-                                              ConnectionState.waiting) {
-                                            return const CircularProgressIndicator();
-                                          } else if (snapshot.hasError) {
-                                            return Text('Error: ${snapshot.error}');
-                                          } else if (snapshot.hasData && snapshot.data != null) {
-                                            int data = snapshot.data!;
-                                            if (showTimeLogs) {
-                                              print("reading (data): $data");
-                                            }
-                                            if (isMultiple(data - buffer, 300) && data >= 60) {
-                                              refresh();
-                                              return const CircularProgressIndicator();
-                                            } else if (data >= maxSeconds) {
-                                              return Text(
-                                                "No Data",
-                                                style: TextStyle(
-                                                  color: Colors.red,
-                                                  fontSize: 12 * size,
-                                                ),
-                                              );
-                                            } else {
-                                              return Text(
-                                                '-${formatDuration(data, false)}',
-                                                style: TextStyle(
-                                                  color:
-                                                    data >= 300 ? Colors.orange :
-                                                    Colors.green,
-                                                  fontSize: 12 * size,
-                                                ),
-                                              );
-                                            }
-                                          } else {
-                                            return const Text('No data available');
-                                          }
-                                        },
-                                      ),
+                                      )
                                     ],
                                   ),
-                                ],
-                              ),
-                            ],
-                          );
-                        }
+                                ),
+                                SizedBox(width: trend == -4 ? 10 : 0),
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(formattedNumber,
+                                            style: TextStyle(
+                                              color: change.abs() >= 15
+                                                  ? Colors.red
+                                                  : change.abs() >= 10
+                                                      ? Colors.orange
+                                                      : change.abs() >= 5
+                                                          ? Colors.yellow
+                                                          : Colors.green,
+                                              fontSize: 12 * size,
+                                            )),
+                                        Text(
+                                          " from ",
+                                          style: TextStyle(
+                                            fontSize: 12 * size,
+                                          ),
+                                        ),
+                                        Text(previousreading.toString(),
+                                            style: TextStyle(
+                                              color: decideColorForReading(
+                                                  previousreading, boundaries),
+                                              fontSize: 12 * size,
+                                            )),
+                                      ],
+                                    ),
+                                    StreamBuilder<int>(
+                                      stream: timeSinceLastReading,
+                                      builder: (BuildContext context,
+                                          AsyncSnapshot<int> snapshot) {
+                                        if (snapshot.connectionState ==
+                                            ConnectionState.waiting) {
+                                          return const CircularProgressIndicator();
+                                        } else if (snapshot.hasError) {
+                                          return Text(
+                                              'Error: ${snapshot.error}');
+                                        } else if (snapshot.hasData &&
+                                            snapshot.data != null) {
+                                          int data = snapshot.data!;
+                                          if (showTimeLogs) {
+                                            print("reading (data): $data");
+                                          }
+                                          if (isMultiple(data - buffer, 300) &&
+                                              data >= 60) {
+                                            refresh();
+                                            return const CircularProgressIndicator();
+                                          } else if (data >= maxSeconds) {
+                                            return Text(
+                                              "No Data",
+                                              style: TextStyle(
+                                                color: Colors.red,
+                                                fontSize: 12 * size,
+                                              ),
+                                            );
+                                          } else {
+                                            return Text(
+                                              showValueTimer
+                                                  ? '-${formatDuration(data, false)}'
+                                                  : 'Previous Reading',
+                                              style: TextStyle(
+                                                color: data >= 300
+                                                    ? Colors.orange
+                                                    : Colors.green,
+                                                fontSize: 12 * size,
+                                              ),
+                                            );
+                                          }
+                                        } else {
+                                          return const Text(
+                                              'No data available');
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
                       }
-                    },
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          resetAutoDimTimer();
-                          refresh();
-                        },
-                        icon: const Icon(Icons.refresh, size: 30),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          resetAutoDimTimer();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute( builder: (context) => const Settings()),
-                          );
-                        },
-                        icon: const Icon(
-                          Icons.settings,
-                          size: 30,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          resetAutoDimTimer();
-                          setFullscreen(!fullscreen);
-                        },
-                        icon: Icon(
-                            fullscreen
-                              ? Icons.fullscreen_exit
-                              : Icons.fullscreen,
-                            size: 30),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            StreamBuilder<int>(
-              stream: autodimstream,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState ==
-                    ConnectionState.waiting) {
-                  return showAutoDimTimer ? const CircularProgressIndicator() : const SizedBox.shrink();
-                } else if (snapshot.hasError) {
-                  return Text('Error: ${snapshot.error}');
-                } else if (snapshot.hasData && snapshot.data != null) {
-                  int data = snapshot.data!;
-                  double dimValueS = (invertNumber(dimValue.toDouble(), 50) / 100);
-                  if (showTimeLogs) {
-                    print("autodim (data): $data");
-                  }
-
-                  if (sleeptimer) {
-                    if (data * 60 >= sleeptimertime) {
-                      wakelock(false, false);
                     }
-                  }
-
-                  if (allowDim) {
-                    return IgnorePointer(
-                      ignoring: true,
-                      child: AnimatedOpacity(
-                        opacity: data >= dimTime ? dimValueS : 0,
-                        duration: data == 0 ? (!quickUndim ? Duration(milliseconds: dimDuration ~/ 2) : const Duration(seconds: 0)) : Duration(milliseconds: dimDuration),
-                        child: Container(
-                          color: Colors.black,
-                        ),
+                  },
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        touchScreen();
+                        refresh();
+                      },
+                      icon: const Icon(Icons.refresh, size: 30),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        touchScreen();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const Settings()),
+                        );
+                      },
+                      icon: const Icon(
+                        Icons.settings,
+                        size: 30,
                       ),
-                    );
-                  } else {
-                    return SizedBox.shrink();
-                  }
-                } else {
-                  return const SizedBox.shrink();
-                }
-              },
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        touchScreen();
+                        setFullscreen(!fullscreen);
+                      },
+                      icon: Icon(
+                          fullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                          size: 30),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ]
-        ),
+          ),
+          StreamBuilder<int>(
+            stream: autodimstream,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return showAutoDimTimer
+                    ? const CircularProgressIndicator()
+                    : const SizedBox.shrink();
+              } else if (snapshot.hasError) {
+                return Text('Error: ${snapshot.error}');
+              } else if (snapshot.hasData && snapshot.data != null) {
+                int data = snapshot.data!;
+                double dimValueS =
+                    (invertNumber(dimValue.toDouble(), 50) / 100);
+                if (showTimeLogs) {
+                  print("autodim (data): $data");
+                }
+
+                if (sleeptimer) {
+                  if (data * 60 >= sleeptimertime) {
+                    sleepTimerActive = true;
+                    wakelock(false, false);
+                  }
+                }
+
+                if (allowDim) {
+                  return IgnorePointer(
+                    ignoring: true,
+                    child: AnimatedOpacity(
+                      opacity: data >= dimTime ? dimValueS : 0,
+                      duration: data == 0
+                          ? (!quickUndim
+                              ? Duration(milliseconds: dimDuration ~/ 2)
+                              : const Duration(seconds: 0))
+                          : Duration(milliseconds: dimDuration),
+                      child: Container(
+                        color: Colors.black,
+                      ),
+                    ),
+                  );
+                } else {
+                  return SizedBox.shrink();
+                }
+              } else {
+                return const SizedBox.shrink();
+              }
+            },
+          ),
+        ]),
       ),
     );
   }
@@ -833,7 +918,8 @@ class _HomeState extends State<Home> {
   }
 
   bool isSecondsAway(int millisecondsSinceEpoch, int seconds) {
-    final targetTime = DateTime.fromMillisecondsSinceEpoch(millisecondsSinceEpoch);
+    final targetTime =
+        DateTime.fromMillisecondsSinceEpoch(millisecondsSinceEpoch);
     final now = DateTime.now();
     final inSeconds = targetTime.difference(now).inSeconds.abs();
     final status = inSeconds >= seconds;

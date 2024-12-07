@@ -15,7 +15,7 @@ void main() async {
 
       WindowOptions windowOptions = const WindowOptions(
         size: Size(800, 600),
-        center: true, 
+        center: true,
         backgroundColor: Colors.transparent,
         titleBarStyle: TitleBarStyle.normal,
       );

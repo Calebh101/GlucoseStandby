@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:personal/dialogue.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,7 +10,8 @@ List alertSounds = [
   "Vibrate only",
 ];
 
-Future<AudioPlayer> playSound(BuildContext context, String id, int volume) async {
+Future<AudioPlayer> playSound(
+    BuildContext context, String id, int volume) async {
   print("Playing sound: $id");
 
   AudioPlayer player = AudioPlayer();
@@ -31,8 +31,10 @@ Future<AudioPlayer> playSound(BuildContext context, String id, int volume) async
   return player;
 }
 
-void vibrate(BuildContext context, List<int> pattern, int defaultVibrate, bool showWarning, bool onlyUseSingle) async {
-  if ((await Vibration.hasCustomVibrationsSupport() ?? false) && !onlyUseSingle) {
+void vibrate(BuildContext context, List<int> pattern, int defaultVibrate,
+    bool showWarning, bool onlyUseSingle) async {
+  if ((await Vibration.hasCustomVibrationsSupport() ?? false) &&
+      !onlyUseSingle) {
     Vibration.vibrate(
       pattern: pattern,
     );
@@ -40,7 +42,8 @@ void vibrate(BuildContext context, List<int> pattern, int defaultVibrate, bool s
     Vibration.vibrate(duration: defaultVibrate);
   } else {
     if (showWarning) {
-      showAlertDialogue(context, "Vibration Not Supported", "Your device does not support vibrations.", false, {"show": false});
+      showAlertDialogue(context, "Vibration Not Supported",
+          "Your device does not support vibrations.", false, {"show": false});
     }
   }
 }
@@ -49,22 +52,23 @@ Future<Map> getAllSettings() async {
   print("Getting settings...");
 
   Map settingsDefaults = {
-      "low": 70,
-      "high": 180,
-      "superlow": 55,
-      "superhigh": 240,
-      "autodimon": false,
-      "autodimvalue": 25,
-      "autodimtime": 30,
-      "stayawake": false,
-      "username": "",
-      "password": "",
-      "allowalerts": false,
-      "superalerts": false,
-      "alertsound": "Default",
-      "alertvolume": 50,
-      "sleeptimer": false,
-      "sleeptimertime": 60,
+    "low": 70,
+    "high": 180,
+    "superlow": 55,
+    "superhigh": 240,
+    "autodimon": false,
+    "autodimvalue": 25,
+    "autodimtime": 30,
+    "stayawake": false,
+    "username": "",
+    "password": "",
+    "allowalerts": false,
+    "superalerts": false,
+    "alertsound": "Default",
+    "alertvolume": 50,
+    "sleeptimer": false,
+    "sleeptimertime": 60,
+    "showtimer": true,
   };
 
   final prefs = await SharedPreferences.getInstance();
@@ -72,23 +76,24 @@ Future<Map> getAllSettings() async {
   Map<dynamic, dynamic> jsonMap = {};
 
   settings.forEach((item) async {
-      print("Setting $item...");
-      try {
-          if (prefs.containsKey(item)) {
-              jsonMap[item] = prefs.get(item) ?? settingsDefaults[item];
-              print("$item set by SharedPreferences");
-          } else if (settingsDefaults[item] != null) {
-              jsonMap[item] = settingsDefaults[item];
-              print("$item set by default");
-          } else {
-              throw Exception("$item not set: Null");
-          }
-      } catch(e) {
-          throw Exception("$item not set: Error: $e");
+    print("Setting $item...");
+    try {
+      if (prefs.containsKey(item)) {
+        jsonMap[item] = prefs.get(item) ?? settingsDefaults[item];
+        print("$item set by SharedPreferences");
+      } else if (settingsDefaults[item] != null) {
+        jsonMap[item] = settingsDefaults[item];
+        print("$item set by default");
+      } else {
+        throw Exception("$item not set: Null");
       }
+    } catch (e) {
+      throw Exception("$item not set: Error: $e");
+    }
   });
 
-  if (jsonMap["alertsound"] == "Vibrate only" && (await Vibration.hasCustomVibrationsSupport() ?? false)) {
+  if (jsonMap["alertsound"] == "Vibrate only" &&
+      (await Vibration.hasCustomVibrationsSupport() ?? false)) {
     jsonMap["alertsound"] = "Default";
   }
 
@@ -108,24 +113,29 @@ bool? toBoolean(String value) {
 Map verifyOutput(int mode, dynamic input, Map conditions) {
   print("verifying output: $input with mode $mode");
 
-  if (mode == 1) { // string
+  if (mode == 1) {
+    // string
     String validPattern;
-    String validCharactersDefault = r'\w\s\-_\~:/\?\&='; // alphanumeric, spaces, basic symbols
+    String validCharactersDefault =
+        r'\w\s\-_\~:/\?\&='; // alphanumeric, spaces, basic symbols
 
     if (conditions["valid"] == null) {
       validPattern = validCharactersDefault;
     } else {
-      validPattern = conditions["valid"].map((char) => RegExp.escape(char)).join('');
+      validPattern =
+          conditions["valid"].map((char) => RegExp.escape(char)).join('');
     }
 
     RegExp validCharactersRegExp = RegExp('^[${validPattern}]*\$');
-    
-    if (!validCharactersRegExp.hasMatch(input)) { // success
+
+    if (!validCharactersRegExp.hasMatch(input)) {
+      // success
       return {"status": true, "value": input};
     } else {
       return {"status": false, "error": "Invalid characters", "value": input};
     }
-  } else if (mode == 2) { // int
+  } else if (mode == 2) {
+    // int
     int? inputS = input;
     if (inputS != null) {
       if (inputS <= conditions["high"] && inputS >= conditions["low"]) {
@@ -140,7 +150,8 @@ Map verifyOutput(int mode, dynamic input, Map conditions) {
     } else {
       return {"status": false, "error": "Null"};
     }
-  } else if (mode == 3) { // slider
+  } else if (mode == 3) {
+    // slider
     int? inputS = input;
     if (inputS != null) {
       print("checkpoint: 2: $conditions");
@@ -156,35 +167,43 @@ Map verifyOutput(int mode, dynamic input, Map conditions) {
     } else {
       return {"status": false, "error": "Null"};
     }
-  } else if (mode == 4) { // bool
+  } else if (mode == 4) {
+    // bool
     bool? inputS = input;
     if (inputS != null) {
       return {"status": true, "value": input};
     } else {
       return {"status": false, "error": "Null", "value": input};
     }
-  } else if (mode == 5) { // list
+  } else if (mode == 5) {
+    // list
     String? inputS = input;
     if (inputS != null) {
       return {"status": true, "value": input};
     } else {
       return {"status": false, "error": "Null", "value": input};
     }
-  } else { // unknown
+  } else {
+    // unknown
     return {"status": false, "error": "Unknown type", "value": input};
   }
 }
 
 Color decideColorForArrow(int mode, input) {
   if (mode == 1) {
-    return
-      input == -3 ? Colors.red :
-      input == -2 ? Colors.orange :
-      input == -1 ? Colors.yellow :
-      input == 1 ? Colors.yellow :
-      input == 2 ? Colors.orange :
-      input == 3 ? Colors.red :
-      Colors.green;
+    return input == -3
+        ? Colors.red
+        : input == -2
+            ? Colors.orange
+            : input == -1
+                ? Colors.yellow
+                : input == 1
+                    ? Colors.yellow
+                    : input == 2
+                        ? Colors.orange
+                        : input == 3
+                            ? Colors.red
+                            : Colors.green;
   } else {
     return Colors.green;
   }
@@ -192,14 +211,21 @@ Color decideColorForArrow(int mode, input) {
 
 double decideRotation(int mode, int input) {
   if (mode == 1) {
-    return
-      input == 3 ? 3.14159 / -2 :
-      input == 2 ? 3.14159 / -2 :
-      input == 1 ? 3.14159 / -4 :
-      input == -3 ? 3.14159 / 2 :
-      input == -2 ? 3.14159 / 2 :
-      input == -1 ? 3.14159 / 4 :
-      input == 0 ? 0 : 0;
+    return input == 3
+        ? 3.14159 / -2
+        : input == 2
+            ? 3.14159 / -2
+            : input == 1
+                ? 3.14159 / -4
+                : input == -3
+                    ? 3.14159 / 2
+                    : input == -2
+                        ? 3.14159 / 2
+                        : input == -1
+                            ? 3.14159 / 4
+                            : input == 0
+                                ? 0
+                                : 0;
   } else {
     return 0;
   }
@@ -228,13 +254,17 @@ Color decideColorForReading(int reading, boundaries) {
     status = 0;
   }
 
-  return
-    status == -2 ? Colors.red :
-    status == -1 ? Colors.redAccent :
-    status == 0 ? Colors.green :
-    status == 1 ? Colors.yellowAccent :
-    status == 2 ? Colors.orange :
-    Colors.white;
+  return status == -2
+      ? Colors.red
+      : status == -1
+          ? Colors.redAccent
+          : status == 0
+              ? Colors.green
+              : status == 1
+                  ? Colors.yellowAccent
+                  : status == 2
+                      ? Colors.orange
+                      : Colors.white;
 }
 
 int getStatusOfGlucose(int reading, Map boundaries) {
@@ -256,26 +286,58 @@ int getStatusOfGlucose(int reading, Map boundaries) {
 }
 
 Map getGlucoseMessage(int glucoseStatus, int trendStatus) {
-  return {"message":"${glucoseStatus.abs() >= 1 ? "Blood glucose is ${getIdOfGlucoseMessage(2, glucoseStatus)}" : ""}${glucoseStatus.abs() >= 1 && trendStatus.abs() >= 2 ? "\n" : ""}${trendStatus.abs() >= 2 ? "Blood glucose is ${getIdOfTrendMessage(2, trendStatus)}" : ""}"};
+  return {
+    "message":
+        "${glucoseStatus.abs() >= 1 ? "Blood glucose is ${getIdOfGlucoseMessage(2, glucoseStatus)}" : ""}${glucoseStatus.abs() >= 1 && trendStatus.abs() >= 2 ? "\n" : ""}${trendStatus.abs() >= 2 ? "Blood glucose is ${getIdOfTrendMessage(2, trendStatus)}" : ""}"
+  };
 }
 
 String getIdOfGlucoseMessage(int mode, int glucoseStatus) {
-  return
-    glucoseStatus == 0 ? "normal" :
-    glucoseStatus == 1 ? "high" :
-    glucoseStatus == 2 ? mode == 2 ? "super high" : "superhigh" :
-    glucoseStatus == -1 ? "low" :
-    glucoseStatus == -2 ? mode == 2 ? "super low" : "superlow" : "normal";
+  return glucoseStatus == 0
+      ? "normal"
+      : glucoseStatus == 1
+          ? "high"
+          : glucoseStatus == 2
+              ? mode == 2
+                  ? "super high"
+                  : "superhigh"
+              : glucoseStatus == -1
+                  ? "low"
+                  : glucoseStatus == -2
+                      ? mode == 2
+                          ? "super low"
+                          : "superlow"
+                      : "normal";
 }
 
 String getIdOfTrendMessage(int mode, int trendStatus) {
-  return
-    trendStatus == 0 ? "flat" :
-    trendStatus == 1 ? mode == 2 ? "rising slowly" : "slowrise" :
-    trendStatus == -1 ? mode == 2 ? "falling slowly" : "slowfall" :
-    trendStatus == 2 ? mode == 2 ? "rising" : "rise" :
-    trendStatus == -2 ? mode == 2 ? "falling" : "fall" :
-    trendStatus == 3 ? mode == 2 ? "rising quickly" : "quickrise" :
-    trendStatus == -3 ? mode == 2 ? "falling quickly" : "fastfall" :
-    trendStatus == -4 ? "unavailable" : "unavailable";
+  return trendStatus == 0
+      ? "flat"
+      : trendStatus == 1
+          ? mode == 2
+              ? "rising slowly"
+              : "slowrise"
+          : trendStatus == -1
+              ? mode == 2
+                  ? "falling slowly"
+                  : "slowfall"
+              : trendStatus == 2
+                  ? mode == 2
+                      ? "rising"
+                      : "rise"
+                  : trendStatus == -2
+                      ? mode == 2
+                          ? "falling"
+                          : "fall"
+                      : trendStatus == 3
+                          ? mode == 2
+                              ? "rising quickly"
+                              : "quickrise"
+                          : trendStatus == -3
+                              ? mode == 2
+                                  ? "falling quickly"
+                                  : "fastfall"
+                              : trendStatus == -4
+                                  ? "unavailable"
+                                  : "unavailable";
 }
