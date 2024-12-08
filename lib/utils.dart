@@ -69,6 +69,7 @@ Future<Map> getAllSettings() async {
     "sleeptimer": false,
     "sleeptimertime": 60,
     "showtimer": true,
+    "style": "Default",
   };
 
   final prefs = await SharedPreferences.getInstance();

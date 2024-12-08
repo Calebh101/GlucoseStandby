@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:core';
 
+import 'package:GlucoseStandby/var.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:window_manager/window_manager.dart';
@@ -43,7 +44,7 @@ class MyApp extends StatelessWidget {
       darkTheme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: Colors.black,
-        // Additional customizations if needed
+        fontFamily: defaultFont,
       ),
       home: const Home(),
     );

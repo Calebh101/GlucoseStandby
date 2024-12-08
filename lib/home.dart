@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:async';
 import 'dart:io';
 
+import 'package:GlucoseStandby/var.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -30,6 +31,8 @@ class _HomeState extends State<Home> {
   bool sleepTimerActive = false;
   bool fullscreen = false;
   bool allowDim = false;
+  bool showSampleWarning = false;
+  bool showValueTimer = true;
   int dimTime = 60;
   int dimValue = 0;
   int autodimcounter = 0;
@@ -43,10 +46,6 @@ class _HomeState extends State<Home> {
   late AudioPlayer globalPlayer;
   final int _currentValue = 0;
   final int _durationInSeconds = 1;
-
-  // I'm not forgetting that these are variables actively set and changed at runtime and not developer settings, you are
-  bool showSampleWarning = false;
-  bool showValueTimer = true;
 
   // intialize streams and updaters
   late Stream<int> timeSinceLastReading;
@@ -72,6 +71,26 @@ class _HomeState extends State<Home> {
       false; // shows a timer on the screen for autodim; currently not working
   bool forceLogin = false; // I'ma be honest I forgot what this does
   bool forceSampleData = false; // forces sample data to be used
+
+  int translateStyle(String input) {
+    int result = 0;
+    input = input.toLowerCase();
+
+    switch (input) {
+      case "default":
+        result = 1;
+        break;
+      case "digital":
+        result = 2;
+        break;
+      default:
+        result = 0;
+        break;
+    }
+
+    log("translated style $input to code $result");
+    return result;
+  }
 
   void log(message) {
     String log = "${DateTime.now().millisecondsSinceEpoch}: $message";
@@ -257,6 +276,7 @@ class _HomeState extends State<Home> {
       "bg": reading,
       "trend": trend,
       "previousreading": prevreading,
+      "style": translateStyle(settings["style"]),
       "showtimer": settings["showtimer"],
       "boundaries": {
         "superlow": settings["superlow"],
@@ -559,6 +579,7 @@ class _HomeState extends State<Home> {
                         int change = reading - previousreading;
                         int trend = data["trend"] ??= -4;
                         Map boundaries = data["boundaries"];
+                        int style = data["style"];
                         String formattedNumber =
                             (change >= 0) ? '+$change' : change.toString();
 
@@ -580,7 +601,7 @@ class _HomeState extends State<Home> {
                         int trendStatus = trend;
                         int alertBuffer = 1800; // seconds
 
-                        log('checkpoint');
+                        log('style: $style');
                         log("alerts: $alerts");
 
                         bool showGlucoseAlert = (data["alerts"]["superalerts"]
@@ -706,6 +727,8 @@ class _HomeState extends State<Home> {
                                   reading.toString(),
                                   style: TextStyle(
                                     fontSize: 50 * size,
+                                    fontFamily:
+                                        style == 2 ? "DSEG" : defaultFont,
                                     color: decideColorForReading(
                                         reading, boundaries),
                                   ),
@@ -718,10 +741,21 @@ class _HomeState extends State<Home> {
                                         children: [
                                           Transform.rotate(
                                             angle: decideRotation(1, trend),
-                                            child: Icon(Icons.arrow_forward,
-                                                size: 50.0 * size,
-                                                color: decideColorForArrow(
-                                                    1, trend)),
+                                            child: style == 2
+                                                ? Text(
+                                                    "→",
+                                                    style: TextStyle(
+                                                      fontSize: 50.0 * size,
+                                                      fontFamily: "DSEG",
+                                                      color:
+                                                          decideColorForArrow(
+                                                              1, trend),
+                                                    ),
+                                                  )
+                                                : Icon(Icons.arrow_forward,
+                                                    size: 50.0 * size,
+                                                    color: decideColorForArrow(
+                                                        1, trend)),
                                           ),
                                           if (trend == 3 || trend == -3)
                                             Row(
@@ -759,11 +793,17 @@ class _HomeState extends State<Home> {
                                                           ? Colors.yellow
                                                           : Colors.green,
                                               fontSize: 12 * size,
+                                              fontFamily: style == 2
+                                                  ? "DSEG"
+                                                  : defaultFont,
                                             )),
                                         Text(
                                           " from ",
                                           style: TextStyle(
                                             fontSize: 12 * size,
+                                            fontFamily: style == 2
+                                                ? "Audiowide"
+                                                : defaultFont,
                                           ),
                                         ),
                                         Text(previousreading.toString(),
@@ -771,6 +811,9 @@ class _HomeState extends State<Home> {
                                               color: decideColorForReading(
                                                   previousreading, boundaries),
                                               fontSize: 12 * size,
+                                              fontFamily: style == 2
+                                                  ? "DSEG"
+                                                  : defaultFont,
                                             )),
                                       ],
                                     ),
@@ -812,6 +855,9 @@ class _HomeState extends State<Home> {
                                                     ? Colors.orange
                                                     : Colors.green,
                                                 fontSize: 12 * size,
+                                                fontFamily: style == 2
+                                                    ? "DSEG"
+                                                    : defaultFont,
                                               ),
                                             );
                                           }
@@ -975,5 +1021,31 @@ class _HomeState extends State<Home> {
   Future<AudioPlayer> playAlert(String id, int volume) async {
     AudioPlayer player = await playSound(context, id, volume);
     return player;
+  }
+}
+
+class ArrowPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    Paint paint = Paint()
+      ..color = Colors.green
+      ..style = PaintingStyle.fill;
+
+    // Draw a simple arrow
+    Path arrowPath = Path()
+      ..moveTo(20, 20) // Starting point
+      ..lineTo(80, 20) // Top horizontal line
+      ..lineTo(60, 10) // Right diagonal line
+      ..moveTo(80, 20) // Top point
+      ..lineTo(60, 30) // Left diagonal line
+      ..lineTo(20, 30) // Bottom line
+      ..close();
+
+    canvas.drawPath(arrowPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    return false;
   }
 }

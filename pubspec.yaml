@@ -27,6 +27,7 @@ dependencies:
   wakelock_plus: ^1.2.8
   audioplayers: ^6.1.0
   vibration: ^2.0.1
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -39,5 +40,22 @@ flutter:
   uses-material-design: true
 
   assets:
-    # alert sound
+    # alerts
     - assets/sounds/alerts/chime.mp3
+
+    # other
+    - assets/fonts/
+
+  fonts:
+    - family: DSEG
+      fonts:
+        - asset: assets/fonts/DSEG14ModernMini-Regular.ttf
+          weight: 700
+    - family: Exo
+      fonts:
+        - asset: assets/fonts/Exo-Regular.ttf
+          weight: 700
+    - family: Audiowide
+      fonts:
+        - asset: assets/fonts/Audiowide-Regular.ttf
+          weight: 700
