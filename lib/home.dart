@@ -6,7 +6,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
-import 'package:personal/dialogue.dart';
+import 'package:localpkg/dialogue.dart';
 
 import 'package:window_manager/window_manager.dart';
 import 'package:universal_html/html.dart' as html;
@@ -30,7 +30,6 @@ class _HomeState extends State<Home> {
   bool sleepTimerActive = false;
   bool fullscreen = false;
   bool allowDim = false;
-  bool showValueTimer = false;
   int dimTime = 60;
   int dimValue = 0;
   int autodimcounter = 0;
@@ -38,12 +37,16 @@ class _HomeState extends State<Home> {
   int sleeptimertime = 60;
   Timer? _timer;
   Map alerts = {"time": 0};
+  String globalLog = "";
+  int? previousReading;
+  int? previousTrend;
   late AudioPlayer globalPlayer;
   final int _currentValue = 0;
   final int _durationInSeconds = 1;
 
   // I'm not forgetting that these are variables actively set and changed at runtime and not developer settings, you are
   bool showSampleWarning = false;
+  bool showValueTimer = true;
 
   // intialize streams and updaters
   late Stream<int> timeSinceLastReading;
@@ -52,18 +55,31 @@ class _HomeState extends State<Home> {
   final StreamController<int> _autodimcontroller = StreamController<int>();
   StreamSubscription? _subscription;
   final ValueNotifier<bool> isVisible = ValueNotifier<bool>(true);
+  final ValueNotifier<String> logNotif = ValueNotifier("waiting on logs...");
 
   // settings
   bool showGlucoseWarning = true;
+  bool quickUndim = false;
   int dimDuration = 25;
   int maxSeconds = 7200;
-  bool quickUndim = false;
   int buffer = 10;
 
   // debug options
-  bool showTimeLogs = false;
-  bool showAutoDimTimer = false;
-  bool forceLogin = false;
+  bool showOnScreenLog = false; // shows logs on the screen
+  bool showTimeLogs =
+      false; // shows logs related to autodimstream and timeSinceLastReading; not recommended, as it generates about 101 logs per second on average
+  bool showAutoDimTimer =
+      false; // shows a timer on the screen for autodim; currently not working
+  bool forceLogin = false; // I'ma be honest I forgot what this does
+  bool forceSampleData = false; // forces sample data to be used
+
+  void log(message) {
+    String log = "${DateTime.now().millisecondsSinceEpoch}: $message";
+
+    globalLog += "${globalLog == "" ? "" : "\n"}$log";
+    logNotif.value = globalLog;
+    print(log);
+  }
 
   void _subscribeToStream() {
     if (_subscription == null || _subscription!.isPaused) {
@@ -71,7 +87,7 @@ class _HomeState extends State<Home> {
     }
   }
 
-  bool wakelock(bool status, bool log) {
+  bool wakelock(bool status, bool logS) {
     try {
       if (status) {
         WakelockPlus.enable();
@@ -79,14 +95,14 @@ class _HomeState extends State<Home> {
         WakelockPlus.disable();
       }
 
-      if (log) {
-        print("wakelock: success: $status");
+      if (logS) {
+        log("wakelock: success: $status");
       }
 
       return true;
     } catch (e) {
-      if (log) {
-        print("wakelock: fail: $e");
+      if (logS) {
+        log("wakelock: fail: $e");
       }
       return false;
     }
@@ -94,14 +110,14 @@ class _HomeState extends State<Home> {
 
   Future<Map<String, dynamic>> fetchData() async {
     int mode = 1;
-    if (mode == 1) {
+    if (mode == 1 && !forceSampleData) {
       var response = await fetchApiData();
       if (response != null) {
         return response;
       } else {
         return {"error": "no response"};
       }
-    } else if (mode == 2) {
+    } else if (mode == 2 || forceSampleData) {
       return await fetchSampleData(false);
     } else {
       return {"error": "invalid_mode"};
@@ -116,7 +132,7 @@ class _HomeState extends State<Home> {
     if (settings["username"] == "sandbox" &&
         settings["password"] == "password") {
       showSampleWarning = false;
-      return await fetchSampleData(true);
+      return await fetchSampleData(true, possibleError: true);
     }
 
     if (settings["username"] == "" ||
@@ -131,7 +147,7 @@ class _HomeState extends State<Home> {
     try {
       response = await dexcom.getGlucoseReadings(
           maxCount: 2, minutes: maxSeconds ~/ 60);
-      print("Read data with dexcom: $dexcom");
+      log("Read data with dexcom: $dexcom");
     } catch (e) {
       showAlertDialogue(
           context,
@@ -149,40 +165,14 @@ class _HomeState extends State<Home> {
       if (match != null) {
         int milliseconds = int.parse(match.group(1)!);
         int seconds = milliseconds ~/ 1000;
-        print('Time in seconds: $seconds');
+        log('Time in seconds: $seconds');
         readingTime = seconds;
       } else {
-        print('Invalid date format');
+        log('Invalid date format');
       }
 
-      Map<String, dynamic> data = {
-        "bg": response[0]["Value"],
-        "trend": getTrend(response[0]["Trend"]),
-        "previousreading": response[1]["Value"],
-        "boundaries": {
-          "superlow": settings["superlow"],
-          "low": settings["low"],
-          "high": settings["high"],
-          "superhigh": settings["superhigh"],
-        },
-        "autodim": {
-          "autodimon": settings["autodimon"],
-          "autodimvalue": settings["autodimvalue"],
-          "autodimtime": settings["autodimtime"],
-          "stayawake": settings["stayawake"],
-        },
-        "alerts": {
-          "allowalerts": settings["allowalerts"],
-          "superalerts": settings["superalerts"],
-          "alertsound": settings["alertsound"],
-          "alertvolume": settings["alertvolume"],
-        },
-        "sleeptimer": {
-          "sleeptimer": settings["sleeptimer"],
-          "sleeptimertime": settings["sleeptimertime"],
-        },
-      };
-
+      Map<String, dynamic> data = getAppData(response[0]["Value"],
+          response[1]["Value"], getTrend(response[0]["Trend"]), settings);
       prevData = data;
       return data;
     } else {
@@ -191,7 +181,7 @@ class _HomeState extends State<Home> {
   }
 
   check(int value) {
-    print("Alert: $value");
+    log("Alert: $value");
   }
 
   int getTrend(String trend) {
@@ -236,18 +226,38 @@ class _HomeState extends State<Home> {
     return newTrend;
   }
 
-  Future<Map<String, dynamic>> fetchSampleData(bool delay) async {
+  Future<Map<String, dynamic>> fetchSampleData(bool delay,
+      {bool possibleError = false}) async {
     if (delay) {
       final random = Random();
       await Future.delayed(Duration(seconds: random.nextInt(2) + 1));
     }
+
     Map settings = await getAllSettings();
-    int reading = random.nextInt(261) + 40;
-    int prevreading = reading + (random.nextInt(41) - 20);
-    Map<String, dynamic> data = {
+    int reading = (previousReading ?? random.nextInt(261) + 40) +
+        (random.nextInt(41) - 20);
+    int prevreading = previousReading ?? (reading + (random.nextInt(41) - 20));
+    int trend = getTrendByChange(reading, prevreading, possibleError);
+    Map<String, dynamic> data =
+        getAppData(reading, prevreading, trend, settings);
+
+    readingTime = (DateTime.now().millisecondsSinceEpoch ~/ 1000) -
+        (random.nextInt(6) + 4);
+    prevData = data;
+    previousReading = reading;
+    previousTrend = trend;
+    showValueTimer = settings["showtimer"];
+    return data;
+  }
+
+  Map<String, dynamic> getAppData(
+      int reading, int prevreading, int trend, Map settings) {
+    log("generating AppData");
+    return {
       "bg": reading,
-      "trend": getTrendByChange(reading, prevreading),
+      "trend": trend,
       "previousreading": prevreading,
+      "showtimer": settings["showtimer"],
       "boundaries": {
         "superlow": settings["superlow"],
         "low": settings["low"],
@@ -271,16 +281,20 @@ class _HomeState extends State<Home> {
         "sleeptimertime": settings["sleeptimertime"],
       },
     };
-
-    readingTime = (DateTime.now().millisecondsSinceEpoch ~/ 1000) -
-        (random.nextInt(6) + 4);
-    prevData = data;
-    return data;
   }
 
-  int getTrendByChange(int reading, int prevreading) {
+  int getTrendByChange(int reading, int prevreading, bool possibleError) {
+    int chance = 25;
     int change = reading - prevreading;
-    print("change: $change");
+    int num = random.nextInt(chance);
+
+    log("getTrendByChange called for readings $reading,$prevreading");
+    log("change: $change");
+    log("chance: $num (1/$chance)");
+
+    if (num == 0 && possibleError) {
+      return -4; // no trend simulation
+    }
 
     if (change >= 5) {
       if (change >= 10) {
@@ -412,7 +426,7 @@ class _HomeState extends State<Home> {
   }
 
   void touchScreen() {
-    print("screen contact");
+    log("screen contact");
     resetAutoDimTimer();
     resetStayAwake();
   }
@@ -422,7 +436,7 @@ class _HomeState extends State<Home> {
   }
 
   void setAutoDimTimer(int amount) {
-    print("Setting autodimcounter to $amount");
+    log("Setting autodimcounter to $amount");
     autodimcounter = amount;
     _autodimcontroller.add(amount);
   }
@@ -497,12 +511,11 @@ class _HomeState extends State<Home> {
 
                     size = size * 0.003;
                     size = size > maxSize ? maxSize : size;
-                    print("size: $size");
+                    log("size: $size");
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const CircularProgressIndicator();
                     } else if (snapshot.hasError) {
-                      print(
-                          "Error with data: ${snapshot.error}: ${snapshot.data}");
+                      log("Error with data: ${snapshot.error}: ${snapshot.data}");
                       return Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -526,7 +539,7 @@ class _HomeState extends State<Home> {
                         data = {"error": "no data available"};
                       }
                       if (data["error"] != null) {
-                        print("Error with data: $data");
+                        log("Error with data: $data");
                         return Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -567,8 +580,8 @@ class _HomeState extends State<Home> {
                         int trendStatus = trend;
                         int alertBuffer = 1800; // seconds
 
-                        print('checkpoint');
-                        print("alerts: $alerts");
+                        log('checkpoint');
+                        log("alerts: $alerts");
 
                         bool showGlucoseAlert = (data["alerts"]["superalerts"]
                                 ? (glucoseStatus.abs() >= 2 ||
@@ -581,13 +594,11 @@ class _HomeState extends State<Home> {
                             showGlucoseWarning;
 
                         if (showGlucoseAlert) {
-                          print(
-                              "Showing glucose alert: ${isSecondsAway(alerts["time"], alertBuffer)}");
+                          log("Showing glucose alert: ${isSecondsAway(alerts["time"], alertBuffer)}");
                           playAlert(data["alerts"]["alertsound"],
                               data["alerts"]["alertvolume"]);
                         } else {
-                          print(
-                              "Hiding glucose alert: ${isSecondsAway(alerts["time"], alertBuffer)}");
+                          log("Hiding glucose alert: ${isSecondsAway(alerts["time"], alertBuffer)}");
                         }
 
                         return Column(
@@ -777,7 +788,7 @@ class _HomeState extends State<Home> {
                                             snapshot.data != null) {
                                           int data = snapshot.data!;
                                           if (showTimeLogs) {
-                                            print("reading (data): $data");
+                                            log("reading (data): $data");
                                           }
                                           if (isMultiple(data - buffer, 300) &&
                                               data >= 60) {
@@ -873,7 +884,7 @@ class _HomeState extends State<Home> {
                 double dimValueS =
                     (invertNumber(dimValue.toDouble(), 50) / 100);
                 if (showTimeLogs) {
-                  print("autodim (data): $data");
+                  log("autodim (data): $data");
                 }
 
                 if (sleeptimer) {
@@ -883,23 +894,28 @@ class _HomeState extends State<Home> {
                   }
                 }
 
-                if (allowDim) {
-                  return IgnorePointer(
-                    ignoring: true,
-                    child: AnimatedOpacity(
-                      opacity: data >= dimTime ? dimValueS : 0,
-                      duration: data == 0
-                          ? (!quickUndim
-                              ? Duration(milliseconds: dimDuration ~/ 2)
-                              : const Duration(seconds: 0))
-                          : Duration(milliseconds: dimDuration),
-                      child: Container(
-                        color: Colors.black,
+                if (allowDim && data > dimTime) {
+                  return Stack(
+                    children: [
+                      IgnorePointer(
+                        ignoring: true,
+                        child: AnimatedOpacity(
+                          opacity: data > dimTime ? dimValueS : 0,
+                          duration: data == 0
+                              ? (!quickUndim
+                                  ? Duration(milliseconds: dimDuration ~/ 2)
+                                  : const Duration(seconds: 0))
+                              : Duration(milliseconds: dimDuration),
+                          child: Container(
+                            color: Colors.black,
+                          ),
+                        ),
                       ),
-                    ),
+                      autodimvaluewidget(data: data, enabled: true),
+                    ],
                   );
                 } else {
-                  return SizedBox.shrink();
+                  return autodimvaluewidget(data: data, enabled: false);
                 }
               } else {
                 return const SizedBox.shrink();
@@ -911,10 +927,39 @@ class _HomeState extends State<Home> {
     );
   }
 
+  Widget autodimvaluewidget({
+    int data = 0,
+    bool enabled = false,
+  }) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            showAutoDimTimer
+                ? Column(children: [
+                    Text("autodim controlled by autodimstream"),
+                    Text(data.toString()),
+                    Text(
+                        "status: ${enabled ? "active" : "inactive"}, ${allowDim ? "enabled" : "disabled"}")
+                  ])
+                : SizedBox.shrink(),
+            if (showOnScreenLog)
+              ValueListenableBuilder<String>(
+                valueListenable: logNotif,
+                builder: (context, value, child) {
+                  return Text(value);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void dismissAlerts() async {
     alerts = {"time": DateTime.now().millisecondsSinceEpoch};
     //player.stop();
-    print("dismissed alerts with time: ${alerts["time"]}");
+    log("dismissed alerts with time: ${alerts["time"]}");
   }
 
   bool isSecondsAway(int millisecondsSinceEpoch, int seconds) {
@@ -923,7 +968,7 @@ class _HomeState extends State<Home> {
     final now = DateTime.now();
     final inSeconds = targetTime.difference(now).inSeconds.abs();
     final status = inSeconds >= seconds;
-    print("$inSeconds >= $seconds: $status");
+    log("$inSeconds >= $seconds: $status");
     return status;
   }
 

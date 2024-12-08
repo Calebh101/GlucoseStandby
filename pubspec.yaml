@@ -9,7 +9,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  personal:
+  localpkg:
     git:
       url: https://github.com/Calebh101/localpkg-flutter
       ref: main

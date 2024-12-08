@@ -1,6 +1,7 @@
+import 'package:GlucoseStandby/var.dart';
 import 'package:flutter/material.dart';
-import 'package:personal/dialogue.dart';
-import 'package:personal/widgets.dart';
+import 'package:localpkg/dialogue.dart';
+import 'package:localpkg/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:GlucoseStandby/login.dart';
@@ -522,6 +523,19 @@ class _SettingsState extends State<Settings> {
                           });
                         },
                       ),
+                      SettingTitle(title: "Miscellaneous"),
+                      Setting(
+                        title: "Show Reading Timer",
+                        desc:
+                            "Show a timer telling how long ago your last reading was recorded.",
+                        text: data["showtimer"] ? "On" : "Off",
+                        action: () {
+                          editSettingsKey("showtimer", "show timer", {
+                            "type": "bool",
+                            "confmode": 1,
+                          });
+                        },
+                      ),
                       SettingTitle(title: "Account"),
                       SettingButton(
                         title: "Log In With Dexcom",
@@ -535,27 +549,12 @@ class _SettingsState extends State<Settings> {
                         },
                         context: context,
                       ),
-                      SettingTitle(title: "About"),
-                      Setting(
-                        title: "About",
-                        desc:
-                            "GlucoseStandby is meant to be an app you can glance at to see your bloodsugar. You can just open the app, turn on Stay Awake, and place your phone or tablet somewhere where you can glance at it. Works best on OLED displays.",
-                        text: "",
-                        action: () {},
-                      ),
-                      Setting(
-                        desc: "Author information.",
-                        title: "Author",
-                        text: "Author: Calebh101",
-                        action: () {},
-                      ),
-                      Setting(
-                        desc: "Info about the version and channel.",
-                        title: "Version Info",
-                        text: "Channel: beta\nVersion: 0.0.0A",
-                        action: () {},
-                      ),
-                      const SizedBox(height: 10),
+                      AboutSettings(
+                          context: context,
+                          version: version,
+                          beta: beta,
+                          about:
+                              "GlucoseStandby is an app you can glance at to see your bloodsugar. You can just open the app, turn on Stay Awake, and place your phone or tablet somewhere where you can glance at it. Works best on OLED displays."),
                       SettingButton(
                         title: "Reset to Default",
                         action: () {
@@ -563,7 +562,6 @@ class _SettingsState extends State<Settings> {
                         },
                         context: context,
                       ),
-                      const SizedBox(height: 10),
                       SettingButton(
                         title: "Send Feedback",
                         action: () {
