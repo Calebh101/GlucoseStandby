@@ -5,7 +5,6 @@ import 'package:GlucoseStandby/var.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:window_manager/window_manager.dart';
-
 import 'package:GlucoseStandby/home.dart';
 
 void main() async {
@@ -33,14 +32,12 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Glucose Standby',
       themeMode: ThemeMode.dark,
-      theme: ThemeData.dark(), // Base dark theme
       darkTheme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: Colors.black,

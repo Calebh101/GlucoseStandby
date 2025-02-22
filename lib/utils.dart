@@ -33,17 +33,17 @@ Future<AudioPlayer> playSound(
 
 void vibrate(BuildContext context, List<int> pattern, int defaultVibrate,
     bool showWarning, bool onlyUseSingle) async {
-  if ((await Vibration.hasCustomVibrationsSupport() ?? false) &&
+  if ((await Vibration.hasCustomVibrationsSupport()) &&
       !onlyUseSingle) {
     Vibration.vibrate(
       pattern: pattern,
     );
-  } else if (await Vibration.hasVibrator() ?? false) {
+  } else if (await Vibration.hasVibrator()) {
     Vibration.vibrate(duration: defaultVibrate);
   } else {
     if (showWarning) {
-      showAlertDialogue(context, "Vibration Not Supported",
-          "Your device does not support vibrations.", false, {"show": false});
+      showDialogue(context: context, title: "Vibration Not Supported",
+          content: Text("Your device does not support vibrations."));
     }
   }
 }
@@ -94,7 +94,7 @@ Future<Map> getAllSettings() async {
   });
 
   if (jsonMap["alertsound"] == "Vibrate only" &&
-      (await Vibration.hasCustomVibrationsSupport() ?? false)) {
+      (await Vibration.hasCustomVibrationsSupport())) {
     jsonMap["alertsound"] = "Default";
   }
 
