@@ -4,6 +4,7 @@ import 'package:localpkg/dialogue.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:vibration/vibration.dart';
+import 'package:localpkg/logger.dart';
 
 List alertSounds = [
   "Default",

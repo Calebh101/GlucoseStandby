@@ -2,6 +2,7 @@ import 'package:GlucoseStandby/var.dart';
 import 'package:flutter/material.dart';
 import 'package:localpkg/dialogue.dart';
 import 'package:localpkg/widgets.dart';
+import 'package:localpkg/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:GlucoseStandby/login.dart';

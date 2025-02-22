@@ -2,12 +2,12 @@ import 'dart:math';
 import 'dart:async';
 import 'dart:io';
 
-import 'package:GlucoseStandby/var.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:localpkg/dialogue.dart';
+import 'package:localpkg/logger.dart';
 
 import 'package:window_manager/window_manager.dart';
 import 'package:universal_html/html.dart' as html;
@@ -16,6 +16,7 @@ import 'package:dexcom/dexcom.dart';
 
 import 'package:GlucoseStandby/utils.dart';
 import 'package:GlucoseStandby/settings.dart';
+import 'package:GlucoseStandby/var.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});

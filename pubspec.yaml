@@ -11,7 +11,7 @@ dependencies:
 
   localpkg:
     git:
-      url: https://github.com/Calebh101/localpkg-flutter
+      url: https://github.com/Calebh101/localpkg-flutter.git
       ref: main
 
   http: ^1.2.2

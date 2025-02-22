@@ -470,7 +470,7 @@ packages:
       path: "."
       ref: main
       resolved-ref: "7e2ef0c2c81e5b9b9bd44efc85c939e7f3fb54fc"
-      url: "https://github.com/Calebh101/localpkg-flutter"
+      url: "https://github.com/Calebh101/localpkg-flutter.git"
     source: git
     version: "1.0.0"
   matcher:
