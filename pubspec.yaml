@@ -23,11 +23,11 @@ dependencies:
   universal_html: ^2.2.4
   device_info_plus: ^10.1.2
   url_launcher: ^6.3.1
-  dexcom: ^0.1.8
   wakelock_plus: ^1.2.8
   vibration: ^2.0.1
   google_fonts: ^6.2.1
   audioplayers: ^6.2.0
+  dexcom: ^0.1.10
 
 dev_dependencies:
   flutter_test:
