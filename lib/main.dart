@@ -1,7 +1,7 @@
 import 'dart:core';
 
 import 'package:localpkg/logger.dart';
-import 'package:GlucoseStandby/desktop/main.dart' as desktop;
+import 'package:GlucoseStandby/desktop/main.dart';
 import 'package:GlucoseStandby/mobile/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_environments_plus/flutter_environments_plus.dart';
@@ -11,6 +11,6 @@ void main(List<String> arguments) async {
     print("Running mobile app...");
     runApp(const MobileApp());
   } else if (Environment.isDesktop) {
-    desktop.run();
+    DesktopApplication.run();
   }
 }

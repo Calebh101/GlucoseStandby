@@ -6,7 +6,7 @@ import 'package:localpkg/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:GlucoseStandby/mobile/login.dart';
-import 'package:GlucoseStandby/mobile/utils.dart';
+import 'package:GlucoseStandby/utils.dart';
 
 class Settings extends StatefulWidget {
   const Settings({super.key});
