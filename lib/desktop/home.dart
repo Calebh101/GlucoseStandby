@@ -1,3 +1,5 @@
+import 'dart:math'
+
 import 'package:GlucoseStandby/desktop/account.dart';
 import 'package:GlucoseStandby/desktop/main.dart';
 import 'package:dexcom/dexcom.dart';
@@ -33,7 +35,7 @@ class _HomeState extends State<Home> {
       cancelOnError: true,
       onData: (data) {
         if (data.isNotEmpty) {
-          readings = data.sublist(0, data.length > 1 ? 2 : 1);
+          readings = data.sublist(0, min(6, data.length) + 1);
           refresh();
         }
       },
