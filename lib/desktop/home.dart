@@ -1,4 +1,4 @@
-import 'dart:math'
+import 'dart:math';
 
 import 'package:GlucoseStandby/desktop/account.dart';
 import 'package:GlucoseStandby/desktop/main.dart';
