@@ -14,9 +14,9 @@ import 'package:universal_html/html.dart' as html;
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:dexcom/dexcom.dart';
 
-import 'package:GlucoseStandby/utils.dart';
-import 'package:GlucoseStandby/settings.dart';
-import 'package:GlucoseStandby/var.dart';
+import 'package:GlucoseStandby/mobile/utils.dart';
+import 'package:GlucoseStandby/mobile/settings.dart';
+import 'package:GlucoseStandby/mobile/var.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -146,7 +146,7 @@ class _HomeState extends State<Home> {
 
   Future<Map<String, dynamic>?> fetchApiData() async {
     Map settings = await getAllSettings();
-    var dexcom = Dexcom(settings["username"], settings["password"]);
+    var dexcom = Dexcom(username: settings["username"], password: settings["password"]);
     List<dynamic>? response;
 
     if (settings["username"] == "sandbox" &&

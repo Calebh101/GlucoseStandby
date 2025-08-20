@@ -27,7 +27,7 @@ class _LoginPageState extends State<LoginPage> {
     String password = _passwordController.text.toString();
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    var dexcom = Dexcom(username, password);
+    var dexcom = Dexcom(username: username, password: password);
     showSnackBar(context, "Loading...");
 
     try {
