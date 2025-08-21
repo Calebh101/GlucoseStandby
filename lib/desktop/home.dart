@@ -17,6 +17,7 @@ class _HomeState extends State<Home> {
 
   List<DexcomReading> readings = []; // 0: newest
   String? error;
+  int sinceLast = 0; // seconds
 
   void refresh() {
     setState(() {});
@@ -40,6 +41,10 @@ class _HomeState extends State<Home> {
       onError: (e) {
         warn("Dexcom error: $e");
         error = e.toString();
+        refresh();
+      },
+      onTimerChange: (time) {
+        sinceLast = time;
         refresh();
       },
     );
