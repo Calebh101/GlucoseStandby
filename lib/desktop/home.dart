@@ -32,11 +32,11 @@ class _HomeState extends State<Home> {
   void initState() {
     print("Initializing...");
     dexcom = Dexcom(username: DesktopApplication.prefs.getString("username"), password: DesktopApplication.prefs.getString("password"));
-    provider = DexcomStreamProvider(dexcom, maxCount: 10, buffer: 30, debug: false);
+    provider = DexcomStreamProvider(dexcom, maxCount: 12, buffer: 30, debug: false);
     super.initState();
 
     provider.listen(
-      cancelOnError: true,
+      cancelOnError: false,
       onData: (data) {
         print("Received data of ${data.length} entries");
         if (data.isEmpty) return;
@@ -72,6 +72,44 @@ class _HomeState extends State<Home> {
     timer.cancel();
     provider.close();
     super.dispose();
+  }
+
+  Widget generateArrows(DexcomReading reading, {required double rotation, required double size}) {
+    double shift = 20;
+    if (reading.trend == DexcomTrend.nonComputable || reading.trend == DexcomTrend.none) return SizedBox.shrink();
+
+    List<Widget> items = [
+      Transform.rotate(
+        angle: rotation * pi / 180,
+        child: Icon(
+          Icons.arrow_upward,
+          size: size,
+          color: DexcomEffects.colorForTrend(reading.trend),
+        ),
+      ),
+      if (reading.trend == DexcomTrend.doubleDown || reading.trend == DexcomTrend.doubleUp)
+      Transform.rotate(
+        angle: rotation * pi / 180,
+        child: Icon(
+          Icons.arrow_upward,
+          size: size,
+          color: DexcomEffects.colorForTrend(reading.trend),
+        ),
+      ),
+    ];
+
+    return SizedBox(
+      width: size + ((items.length - 1) * shift),
+      height: size,
+      child: Stack(
+        children: List.generate(items.length, (i) {
+          return Positioned(
+            left: i * shift,
+            child: items[i],
+          );
+        }),
+      ),
+    );
   }
 
   @override
@@ -114,25 +152,7 @@ class _HomeState extends State<Home> {
                   children: [
                     Text("${readings.first.value}", style: TextStyle(fontSize: mainTextSize, color: DexcomEffects.colorForValue(readings.first.value))),
                     if (rotation != null)
-                    ...[
-                      Transform.rotate(
-                        angle: rotation * pi / 180,
-                        child: Icon(
-                          Icons.arrow_upward,
-                          size: iconSize,
-                          color: DexcomEffects.colorForTrend(readings.first.trend),
-                        ),
-                      ),
-                      if (readings.first.trend == DexcomTrend.doubleDown || readings.first.trend == DexcomTrend.doubleUp)
-                      Transform.rotate(
-                        angle: 180 * pi / 180,
-                        child: Icon(
-                          Icons.arrow_upward,
-                          size: iconSize,
-                          color: DexcomEffects.colorForTrend(readings.first.trend),
-                        ),
-                      ),
-                    ],
+                    generateArrows(readings.first, rotation: rotation.toDouble(), size: iconSize),
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -141,25 +161,7 @@ class _HomeState extends State<Home> {
                           children: [
                             Text("${readings[1].value}", style: TextStyle(fontSize: subTextSize, color: DexcomEffects.colorForValue(readings[1].value))),
                             if (subrotation != null)
-                            ...[
-                              Transform.rotate(
-                                angle: subrotation * pi / 180,
-                                child: Icon(
-                                  Icons.arrow_upward,
-                                  size: subIconSize,
-                                  color: DexcomEffects.colorForTrend(readings[1].trend),
-                                ),
-                              ),
-                              if (readings[1].trend == DexcomTrend.doubleDown || readings[1].trend == DexcomTrend.doubleUp)
-                              Transform.rotate(
-                                angle: 180 * pi / 180,
-                                child: Icon(
-                                  Icons.arrow_upward,
-                                  size: subIconSize,
-                                  color: DexcomEffects.colorForTrend(readings[1].trend),
-                                ),
-                              ),
-                            ],
+                            generateArrows(readings[1], rotation: subrotation.toDouble(), size: subIconSize),
                           ],
                         ),
                         Text("-${formatSeconds(sinceLast)}", style: TextStyle(fontSize: subTextSize, color: DexcomEffects.colorForTime(sinceLast))),
@@ -177,7 +179,7 @@ class _HomeState extends State<Home> {
 
                       List<FlSpot> points = List.generate(readings.length, (int i) {
                         DexcomReading reading = readings[i];
-                        return FlSpot(i.toDouble(), reading.value.toDouble());
+                        return FlSpot(0 - DateTime.now().difference(reading.systemTime).inMinutes.toDouble(), reading.value.toDouble());
                       });
 
                       double dataMin = points.map((e) => e.y).reduce((a, b) => a < b ? a : b);
@@ -192,11 +194,24 @@ class _HomeState extends State<Home> {
                           maxY: maxY,
                           gridData: FlGridData(show: true),
                           titlesData: FlTitlesData(
-                            leftTitles: AxisTitles(
+                            rightTitles: AxisTitles(
                               sideTitles: SideTitles(showTitles: true),
                             ),
                             bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(showTitles: true),
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, meta) {
+                                  return Text(
+                                    "-${value.toInt()}",
+                                  );
+                                },
+                              ),
+                            ),
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                            topTitles: AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
                             ),
                           ),
                           lineBarsData: [

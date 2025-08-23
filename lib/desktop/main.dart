@@ -39,8 +39,9 @@ class DesktopApplication {
           key: 'live_reading',
           label: (() {
             int timeSince = DateTime.now().difference(reading.systemTime).inMinutes;
+            bool useLongTime = false;
 
-            return "${["${reading.value}", trendToString(reading.trend)].whereType<String>().join(" and ")} (-$timeSince Minute${timeSince == 1 ? "" : "s"})";
+            return "${["${reading.value}", trendToString(reading.trend)].whereType<String>().join(" and ")} (-$timeSince${useLongTime ? " Minute${timeSince == 1 ? "" : "s"}" : "m"})";
           })(),
           onClick: (item) async {
             await show();

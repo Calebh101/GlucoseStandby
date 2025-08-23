@@ -38,7 +38,7 @@ class _LoginPageState extends State<LoginPage> {
         await Future.delayed(Duration(seconds: 3));
       } else {
         print("Account type: $dexcom");
-        await dexcom.verifyLogin(username, password);
+        if ((await dexcom.verify()).status == false) throw Exception("Invalid credentials");
         await dexcom.getGlucoseReadings();
       }
 
