@@ -30,6 +30,7 @@ String? trendToString(DexcomTrend trend) {
 class DesktopApplication {
   static late SharedPreferences prefs;
   static const Size windowSize = Size(400, 500);
+  static bool _ranYet = false;
 
   static Menu getMenu([DexcomReading? reading]) {
     List<MenuItem> items = [
@@ -88,17 +89,16 @@ class DesktopApplication {
     return menu;
   }
 
-  static Future<void> run() async {
-    prefs = await SharedPreferences.getInstance();
+  static Future<void> run(bool service) async {
     WidgetsFlutterBinding.ensureInitialized();
+    prefs = await SharedPreferences.getInstance();
 
-    await windowManager.ensureInitialized();
     await trayManager.setIcon(Environment.isWindows ? 'assets/app/icon/splash.ico' : 'assets/app/icon/splash.png');
     await trayManager.setContextMenu(getMenu());
 
     print("Running desktop app...");
     await show();
-    runApp(const DesktopApp());
+    if (service) await hide();
   }
 
   static Future<void> show() async {
@@ -107,6 +107,7 @@ class DesktopApplication {
       size: windowSize,
     );
 
+    await windowManager.ensureInitialized();
     await windowManager.setPreventClose(true);
     await windowManager.setMinimizable(false);
     await windowManager.setMaximizable(false);
@@ -117,6 +118,14 @@ class DesktopApplication {
   
     await windowManager.show();
     await windowManager.focus();
+
+    if (!_ranYet) {
+      print("Running application...");
+      runApp(const DesktopApp());
+    }
+
+    _ranYet = true;
+    print("Finished calling show");
   }
 
   static Future<void> hide() async {

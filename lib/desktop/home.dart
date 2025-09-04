@@ -126,7 +126,10 @@ class _HomeState extends State<Home> {
           }, icon: Icon(Icons.account_box_outlined)),
           IconButton(onPressed: () {
             print("Refreshing...");
-            provider.refresh();
+
+            Navigator.pushReplacement(context, MaterialPageRoute(
+              builder: (context) => widget,
+            ));
           }, icon: Icon(Icons.refresh)),
           IconButton(onPressed: () {
             DesktopApplication.hide();

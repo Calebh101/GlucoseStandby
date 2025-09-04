@@ -11,6 +11,6 @@ void main(List<String> arguments) async {
     print("Running mobile app...");
     runApp(const MobileApp());
   } else if (Environment.isDesktop) {
-    DesktopApplication.run();
+    DesktopApplication.run(arguments.contains("--service"));
   }
 }
