@@ -28,6 +28,14 @@ class _HomeState extends State<Home> {
     setState(() {});
   }
 
+  void reload() {
+    print("Reloading...");
+
+    Navigator.pushReplacement(context, MaterialPageRoute(
+      builder: (context) => widget,
+    ));
+  }
+
   @override
   void initState() {
     print("Initializing...");
@@ -48,6 +56,11 @@ class _HomeState extends State<Home> {
         warn("Dexcom error: $e");
         error = e.toString();
         refresh();
+
+        Timer(Duration(minutes: 2), () {
+          print("Error timer triggered...");
+          reload();
+        });
       },
       onTimerChange: (time) {
         print("Tick: $time");
@@ -126,10 +139,7 @@ class _HomeState extends State<Home> {
           }, icon: Icon(Icons.account_box_outlined)),
           IconButton(onPressed: () {
             print("Refreshing...");
-
-            Navigator.pushReplacement(context, MaterialPageRoute(
-              builder: (context) => widget,
-            ));
+            reload();       
           }, icon: Icon(Icons.refresh)),
           IconButton(onPressed: () {
             DesktopApplication.hide();
