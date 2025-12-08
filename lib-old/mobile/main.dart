@@ -1,5 +1,5 @@
-import 'package:GlucoseStandby/mobile/home.dart';
-import 'package:GlucoseStandby/mobile/var.dart';
+import 'home.dart';
+import 'var.dart';
 import 'package:flutter/material.dart';
 
 class MobileApp extends StatelessWidget {

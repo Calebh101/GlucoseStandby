@@ -1,12 +1,12 @@
-import 'package:GlucoseStandby/mobile/var.dart';
+import 'var.dart';
 import 'package:flutter/material.dart';
 import 'package:localpkg/dialogue.dart';
 import 'package:localpkg/widgets.dart';
 import 'package:localpkg/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:GlucoseStandby/mobile/login.dart';
-import 'package:GlucoseStandby/utils.dart';
+import 'login.dart';
+import '../utils.dart';
 
 class Settings extends StatefulWidget {
   const Settings({super.key});

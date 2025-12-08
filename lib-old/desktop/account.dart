@@ -1,4 +1,4 @@
-import 'package:GlucoseStandby/desktop/home.dart';
+import 'home.dart';
 import 'package:flutter/material.dart';
 import 'package:localpkg/logger.dart';
 import 'package:localpkg/dialogue.dart';
