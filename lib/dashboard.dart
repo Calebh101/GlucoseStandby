@@ -1,6 +1,8 @@
+import 'package:GlucoseStandby/settings.dart';
 import 'package:dexcom/dexcom.dart';
 import 'package:flutter/material.dart';
 import 'package:GlucoseStandby/main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Dashboard extends StatefulWidget {
   final EnvironmentType type;
@@ -11,28 +13,42 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-  late Dexcom dexcom;
-  late DexcomStreamProvider provider;
+  Dexcom? dexcom;
+  DexcomStreamProvider? provider;
   (DexcomReading?, DexcomReading?)? readings; // Latest, next latest
+  Settings? settings;
 
-  Future<void> reloadSettings() async {}
+  Future<void> reloadSettings() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    settings = Settings.fromPrefs(prefs);
+
+    final String? username = prefs.getString("username");
+    final String? password = prefs.getString("password");
+
+    if (username != dexcom?.username || password != dexcom?.password) {
+      dexcom = Dexcom(username: username, password: password);
+      listen(dexcom!);
+    }
+  }
 
   @override
   void initState() {
-    dexcom = Dexcom();
+    super.initState();
+  }
+
+  void listen(Dexcom dexcom) {
+    provider?.close();
     provider = DexcomStreamProvider(dexcom);
 
-    provider.listen(onData: (data) {
+    provider!.listen(onData: (data) {
       readings = (data.elementAtOrNull(0), data.elementAtOrNull(1));
       reloadSettings();
     });
-
-    super.initState();
   }
 
   @override
   void dispose() {
-    provider.close();
+    provider?.close();
     super.dispose();
   }
 
