@@ -11,12 +11,22 @@ import 'package:styled_logger/styled_logger.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
+const String version = "0.0.1A";
+const bool beta = true;
+const String defaultFont = "Arial";
+
 void main(List<String> arguments) {
   if (Environment.isDesktop) {
     DesktopApplication.run(arguments.contains("--service"));
   } else {
-    runApp(Dashboard());
+    runApp(Dashboard(type: Environment.isWeb ? EnvironmentType.web : EnvironmentType.mobile));
   }
+}
+
+enum EnvironmentType {
+  desktop,
+  mobile,
+  web,
 }
 
 class DesktopApplication {
@@ -113,7 +123,7 @@ class DesktopApplication {
 
     if (!_ranYet) {
       Logger.print("Running application...");
-      runApp(Dashboard());
+      runApp(Dashboard(type: EnvironmentType.desktop));
     }
 
     _ranYet = true;
