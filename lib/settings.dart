@@ -2,16 +2,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class Settings {
   final bool showTimer;
+  final bool stayAwake;
   final Bounderies bounderies;
   final Autodim? autodim;
-  final bool stayAwake;
-  final double? sleepTimer;
+  final double? sleepTimer; // seconds
 
   const Settings({required this.autodim, required this.bounderies, required this.showTimer, required this.sleepTimer, required this.stayAwake});
 
   static Settings fromPrefs(SharedPreferences prefs) {
     return Settings(
       showTimer: prefs.getBool("showTimer") ?? true,
+      stayAwake: prefs.getBool("stayAwake") ?? false,
+      sleepTimer: prefs.getDouble("sleepTimer"),
       bounderies: Bounderies(
         high: prefs.getInt("high") ?? 180,
         low: prefs.getInt("low") ?? 70,
@@ -22,8 +24,6 @@ class Settings {
         endValue: prefs.getDouble("autodimValue") ?? 0.75,
         delay: prefs.getDouble("autodimDelay") ?? 300,
       ) : null,
-      sleepTimer: prefs.getDouble("sleepTimer"),
-      stayAwake: prefs.getBool("stayAwake") ?? false,
     );
   }
 }
