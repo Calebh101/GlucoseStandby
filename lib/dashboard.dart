@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:GlucoseStandby/main.dart';
 
 class Dashboard extends StatefulWidget {
-  const Dashboard({super.key});
+  final EnvironmentType type;
+  const Dashboard({super.key, required this.type});
 
   @override
   State<Dashboard> createState() => _DashboardState();
