@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:GlucoseStandby/desktop/account.dart';
-import 'package:GlucoseStandby/desktop/main.dart';
+import 'account.dart';
+import 'main.dart';
 import 'package:dexcom/dexcom.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -139,7 +139,7 @@ class _HomeState extends State<Home> {
           }, icon: Icon(Icons.account_box_outlined)),
           IconButton(onPressed: () {
             print("Refreshing...");
-            reload();       
+            reload();
           }, icon: Icon(Icons.refresh)),
           IconButton(onPressed: () {
             DesktopApplication.hide();

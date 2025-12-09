@@ -9,9 +9,9 @@ dependencies:
   flutter:
     sdk: flutter
 
-  localpkg:
+  localpkg_flutter:
     git:
-      url: https://github.com/Calebh101/localpkg-flutter
+      url: https://github.com/Calebh101/localpkg-flutter-2
       ref: main
 
   http: ^1.2.2
@@ -32,6 +32,8 @@ dependencies:
   restart_app: ^1.3.2
   fl_chart: ^1.0.0
   dexcom: ^1.0.6
+  cupertino_icons: ^1.0.8
+  styled_logger: ^1.0.2
 
   #dexcom:
     #path: /home/caleb/projects/dexcom/dart

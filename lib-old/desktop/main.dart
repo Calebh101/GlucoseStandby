@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:GlucoseStandby/desktop/home.dart';
+import 'home.dart';
 import 'package:dexcom/dexcom.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_environments_plus/flutter_environments_plus.dart';
@@ -115,7 +115,7 @@ class DesktopApplication {
 
     await windowManager.waitUntilReadyToShow(options);
     print("Showing window... (size: ${await windowManager.getSize()})");
-  
+
     await windowManager.show();
     await windowManager.focus();
 
