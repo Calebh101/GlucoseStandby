@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:localpkg_flutter/localpkg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Settings {
@@ -43,4 +45,29 @@ class Autodim {
   final double delay; // seconds
 
   const Autodim({required this.endValue, required this.delay});
+}
+
+class SettingsWidget extends StatefulWidget {
+  const SettingsWidget({super.key});
+
+  @override
+  State<SettingsWidget> createState() => _SettingsWidgetState();
+}
+
+class _SettingsWidgetState extends State<SettingsWidget> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Settings"),
+        centerTitle: true,
+        leading: IconButton(onPressed: () {
+          context.navigator.pop();
+        }, icon: Icon(Icons.arrow_back)),
+      ),
+      body: Column(
+        children: [],
+      ),
+    );
+  }
 }

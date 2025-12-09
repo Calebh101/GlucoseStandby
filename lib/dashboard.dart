@@ -1,4 +1,7 @@
+import 'dart:math';
+
 import 'package:GlucoseStandby/settings.dart';
+import 'package:GlucoseStandby/util.dart';
 import 'package:dexcom/dexcom.dart';
 import 'package:flutter/material.dart';
 import 'package:GlucoseStandby/main.dart';
@@ -23,8 +26,8 @@ class _DashboardState extends State<Dashboard> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     settings = Settings.fromPrefs(prefs);
 
-    final String? username = prefs.getString("username");
-    final String? password = prefs.getString("password");
+    String? username = prefs.getString("username");
+    String? password = prefs.getString("password");
 
     if (username != dexcom?.username || password != dexcom?.password) {
       dexcom = Dexcom(username: username, password: password);
@@ -71,26 +74,66 @@ class _DashboardState extends State<Dashboard> {
             height: iconSize,
             child: CircularProgressIndicator(),
           ) : Icon(Icons.refresh, size: iconSize)),
-          IconButton(onPressed: () {}, icon: Icon(Icons.settings, size: iconSize)),
+          IconButton(onPressed: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => SettingsWidget(),
+              ),
+            );
+
+            await reloadSettings();
+          }, icon: Icon(Icons.settings, size: iconSize)),
         ],
       ),
       body: Center(
         child: Row(
           children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [],
-            ),
+            if (readings?.$1 != null)
+            ReadingWidget(reading: readings!.$1!, settings: settings, size: 48),
             Column(
               children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [],
-                ),
+                if (readings?.$2 != null)
+                ReadingWidget(reading: readings!.$2!, settings: settings, size: 24),
               ],
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class ReadingWidget extends StatelessWidget {
+  final DexcomReading reading;
+  final Settings? settings;
+  final double size;
+  const ReadingWidget({super.key, required this.reading, required this.settings, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size * 3,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text("${reading.value}", style: TextStyle(fontSize: size, color: settings != null ? readingToColor(reading, settings!) : null)),
+          if (reading.trend != DexcomTrend.none && reading.trend != DexcomTrend.nonComputable)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Transform.rotate(
+                angle: trendToRotation(reading.trend) * pi / 180,
+                child: Icon(Icons.arrow_upward, color: trendToColor(reading.trend)),
+              ),
+              if (reading.trend == DexcomTrend.doubleUp || reading.trend == DexcomTrend.doubleDown)
+              Transform.rotate(
+                angle: trendToRotation(reading.trend) * pi / 180,
+                child: Icon(Icons.arrow_upward, color: trendToColor(reading.trend)),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
