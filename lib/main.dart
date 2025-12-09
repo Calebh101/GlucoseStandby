@@ -19,7 +19,7 @@ void main(List<String> arguments) {
   if (Environment.isDesktop) {
     DesktopApplication.run(arguments.contains("--service"));
   } else {
-    runApp(Dashboard(type: Environment.isWeb ? EnvironmentType.web : EnvironmentType.mobile));
+    runApp(App(type: Environment.isWeb ? EnvironmentType.web : EnvironmentType.mobile));
   }
 }
 
@@ -27,6 +27,26 @@ enum EnvironmentType {
   desktop,
   mobile,
   web,
+}
+
+class App extends StatelessWidget {
+  final EnvironmentType type;
+  const App({super.key, required this.type});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Glucose Standby',
+      themeMode: ThemeMode.dark,
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: Colors.black,
+        fontFamily: defaultFont,
+      ),
+      home: Dashboard(type: type),
+    );
+  }
 }
 
 class DesktopApplication {
@@ -123,7 +143,7 @@ class DesktopApplication {
 
     if (!_ranYet) {
       Logger.print("Running application...");
-      runApp(Dashboard(type: EnvironmentType.desktop));
+      runApp(App(type: EnvironmentType.desktop));
     }
 
     _ranYet = true;

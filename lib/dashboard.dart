@@ -17,6 +17,7 @@ class _DashboardState extends State<Dashboard> {
   DexcomStreamProvider? provider;
   (DexcomReading?, DexcomReading?)? readings; // Latest, next latest
   Settings? settings;
+  bool loading = true;
 
   Future<void> reloadSettings() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -40,9 +41,14 @@ class _DashboardState extends State<Dashboard> {
     provider?.close();
     provider = DexcomStreamProvider(dexcom);
 
-    provider!.listen(onData: (data) {
+    provider!.listen(onData: (data) async {
       readings = (data.elementAtOrNull(0), data.elementAtOrNull(1));
-      reloadSettings();
+      await reloadSettings();
+      loading = false;
+      setState(() {});
+    }, onRefresh: () {
+      loading = true;
+      setState(() {});
     });
   }
 
@@ -54,6 +60,38 @@ class _DashboardState extends State<Dashboard> {
 
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    final double iconSize = 24;
+
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        actions: [
+          IconButton(onPressed: () {}, icon: loading ? Container(
+            width: iconSize,
+            height: iconSize,
+            child: CircularProgressIndicator(),
+          ) : Icon(Icons.refresh, size: iconSize)),
+          IconButton(onPressed: () {}, icon: Icon(Icons.settings, size: iconSize)),
+        ],
+      ),
+      body: Center(
+        child: Row(
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [],
+            ),
+            Column(
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
