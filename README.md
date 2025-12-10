@@ -1,16 +1,35 @@
 # GlucoseStandby
 
-A new Flutter project.
+A small application to let you see your Dexcom CGM blood glucose data in the background.
 
-## Getting Started
+# Can I trust this app?
 
-This project is a starting point for a Flutter application.
+Asking the creator of the app is bold... but yes you can. It's open source and only requests Dexcom's servers. (I don't even track analytics; I know people's health data can be sensitive to some)
 
-A few resources to get you started if this is your first Flutter project:
+The package I use to make these requests was also made by me: [dexcom](https://pub.dev/packages/dexcom) (shameless plug I know). Here's a snippet of the endpoints:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```dart
+// Lists all the endpoints for the requests
+Map _dexcomData = {
+  "endpoint": {
+    "session": "General/LoginPublisherAccountById",
+    "account": "General/AuthenticatePublisherAccount",
+    "data": "Publisher/ReadPublisherLatestGlucoseValues"
+  }
+};
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+String _getBaseUrl(DexcomRegion region) {
+  switch (region) {
+    case DexcomRegion.us:
+      return "https://share2.dexcom.com/ShareWebServices/Services";
+    case DexcomRegion.ous:
+      return "https://shareous1.dexcom.com/ShareWebServices/Services";
+    case DexcomRegion.jp:
+      return "https://share.dexcom.jp/ShareWebServices/Services";
+  }
+}
+```
+
+The package uses only these URLs and endpoints for its data. Note that your username *and* password are needed for these endpoints, and those are stored in plain text.
+
+For a detailed breakdown of these endpoints, check out my [documentation](https://github.com/Calebh101/dexcom/README.md) on this.

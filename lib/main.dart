@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:GlucoseStandby/dashboard.dart';
 import 'package:GlucoseStandby/util.dart';
 import 'package:dexcom/dexcom.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_environments_plus/flutter_environments_plus.dart';
 import 'package:restart_app/restart_app.dart';
@@ -16,6 +17,15 @@ const bool beta = true;
 const String defaultFont = "Arial";
 
 void main(List<String> arguments) {
+  if (kDebugMode) {
+    Logger.enable();
+    Logger.setVerbose(true);
+  }
+
+  if (arguments.contains("--debug")) {
+    Logger.enableVerbose();
+  }
+
   if (Environment.isDesktop) {
     DesktopApplication.run(arguments.contains("--service"));
   } else {
@@ -80,7 +90,7 @@ class DesktopApplication {
         },
       ),
       MenuItem(
-        key: 'show_window',
+        key: 'hide_window',
         label: 'Hide Window',
         onClick: (item) async {
           await hide();

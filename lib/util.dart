@@ -6,16 +6,26 @@ Color? readingToColor(DexcomReading reading, Settings settings) {
   final v = reading.value; // value
   final b = settings.bounderies; // bounderies
 
-  if (v > b.high) {
-    return Colors.orange;
-  } else if (v > b.superHigh) {
+  if (v > b.superHigh) {
     return Colors.red;
-  } else if (v < b.low) {
+  } else if (v > b.high) {
     return Colors.orange;
   } else if (v < b.superLow) {
     return Colors.red;
+  } else if (v < b.low) {
+    return Colors.orange;
   } else {
-    return null;
+    return Colors.green;
+  }
+}
+
+Color? timerToColor(int seconds) {
+  if (seconds < 240) {
+    return Colors.green;
+  } else if (seconds < 360) {
+    return Colors.yellow;
+  } else {
+    return Colors.red;
   }
 }
 
@@ -56,5 +66,30 @@ int trendToRotation(DexcomTrend trend) {
     case DexcomTrend.doubleUp: return 0;
     case DexcomTrend.doubleDown: return 180;
     default: throw UnimplementedError("Invalid trend: $trend");
+  }
+}
+
+String formatDuration(int seconds, {bool forceIncludeHours = false}) {
+  if (seconds < 0) {
+    seconds = 0;
+  }
+
+  Duration duration = Duration(seconds: seconds);
+  String twoDigits(int n) => n.toString().padLeft(2, '0');
+  String hours = duration.inHours > 0 ? duration.inHours.toString() : '';
+  String minutes;
+
+  if (seconds < 600) {
+    minutes = duration.inMinutes.remainder(60).toString();
+  } else {
+    minutes = twoDigits(duration.inMinutes.remainder(60));
+  }
+
+  String secs = twoDigits(duration.inSeconds.remainder(60));
+
+  if (hours.isNotEmpty || forceIncludeHours) {
+    return "$hours:$minutes:$secs";
+  } else {
+    return "$minutes:$secs";
   }
 }

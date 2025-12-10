@@ -197,10 +197,10 @@ packages:
     dependency: "direct main"
     description:
       name: dexcom
-      sha256: "93a7cf13d39ad1b708f6e195cc4167f6abd6ce451c614001ae356fd1bbe24a4e"
+      sha256: "0e828fb04a432a43ebdf26954bdb727e6853bf6a0de334194944a7eb257ea4b1"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.6"
+    version: "1.0.8"
   equatable:
     dependency: transitive
     description:
@@ -602,6 +602,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.0"
+  settings_ui:
+    dependency: "direct main"
+    description:
+      name: settings_ui
+      sha256: d9838037cb554b24b4218b2d07666fbada3478882edefae375ee892b6c820ef3
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.2"
   shared_preferences:
     dependency: "direct main"
     description:
