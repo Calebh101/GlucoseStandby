@@ -6,7 +6,7 @@ A small application to let you see your Dexcom CGM blood glucose data in the bac
 
 Asking the creator of the app is bold... but yes you can. It's open source and only requests Dexcom's servers. (I don't even track analytics; I know people's health data can be sensitive to some)
 
-The package I use to make these requests was also made by me: [dexcom](https://pub.dev/packages/dexcom) (shameless plug I know). Here's a snippet of the endpoints:
+The package I use to make these requests (and was also made by m)e is [dexcom](https://pub.dev/packages/dexcom) (shameless plug I know). Here's a snippet of the endpoints:
 
 ```dart
 // Lists all the endpoints for the requests
@@ -30,6 +30,6 @@ String _getBaseUrl(DexcomRegion region) {
 }
 ```
 
-The package uses only these URLs and endpoints for its data. Note that your username *and* password are needed for these endpoints, and those are stored in plain text.
+The package uses only these URLs and endpoints for its data. Note that your username *and* password are needed for these endpoints, and those are stored in plain text *on your device*.
 
-For a detailed breakdown of these endpoints, check out my [documentation](https://github.com/Calebh101/dexcom/README.md) on this.
+For a detailed breakdown of these endpoints, check out my [documentation](https://github.com/Calebh101/dexcom/blob/main/README.md) on this. (Yes I made this too haha)
