@@ -6,7 +6,7 @@ A small application to let you see your Dexcom CGM blood glucose data in the bac
 
 Asking the creator of the app is bold... but yes you can. It's open source and only requests Dexcom's servers. (I don't even track analytics; I know people's health data can be sensitive to some)
 
-The package I use to make these requests (and was also made by m)e is [dexcom](https://pub.dev/packages/dexcom) (shameless plug I know). Here's a snippet of the endpoints:
+The package I use to make these requests (and was also made by me) is [dexcom](https://pub.dev/packages/dexcom) (shameless plug I know). Here's a snippet of the endpoints:
 
 ```dart
 // Lists all the endpoints for the requests
