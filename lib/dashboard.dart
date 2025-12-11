@@ -6,9 +6,17 @@ import 'package:GlucoseStandby/util.dart';
 import 'package:dexcom/dexcom.dart';
 import 'package:flutter/material.dart';
 import 'package:GlucoseStandby/main.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_environments_plus/flutter_environments_plus.dart' hide EnvironmentType;
 import 'package:intl/intl.dart';
+import 'package:localpkg_flutter/localpkg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:styled_logger/styled_logger.dart';
+import 'package:universal_html/html.dart' as html;
+import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:window_manager/window_manager.dart';
+
+const bool dexcomDebug = false;
 
 class Dashboard extends StatefulWidget {
   final EnvironmentType type;
@@ -24,6 +32,8 @@ class _DashboardState extends State<Dashboard> {
   (DexcomReading?, DexcomReading?)? readings; // Latest, next latest
   Settings? settings;
   bool loading = true;
+  bool? wakelockEnabled = false;
+  bool isFullscreen = false;
   int sleepTimer = 0;
 
   late Timer timer;
@@ -38,7 +48,7 @@ class _DashboardState extends State<Dashboard> {
     String? password = prefs.getString("password");
 
     if ((username != dexcom?.username || password != dexcom?.password) && username != null && password != null) {
-      dexcom = Dexcom(username: username, password: password);
+      dexcom = Dexcom(username: username, password: password, debug: dexcomDebug);
       listen(dexcom!);
     }
 
@@ -46,9 +56,39 @@ class _DashboardState extends State<Dashboard> {
     setState(() {});
   }
 
+  Future<void> initWakelock() async {
+    try {
+      Logger.print("Initializing wakelock...");
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      wakelockEnabled = await WakelockPlus.enabled;
+      await setWakelock(prefs.getBool("wakelock") ?? wakelockEnabled!);
+      setState(() {});
+    } catch (e) {
+      wakelockEnabled = null;
+      SnackBarManager.show(context, "Unable to use wakelock.");
+      setState(() {});
+    }
+  }
+
+  Future<void> setWakelock(bool value) async {
+    try {
+      wakelockEnabled = value;
+      await WakelockPlus.toggle(enable: value);
+      setState(() {});
+    } catch (e) {
+      wakelockEnabled = null;
+      SnackBarManager.show(context, "Unable to use wakelock.");
+      setState(() {});
+    }
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool("wakelock", value);
+  }
+
   @override
   void initState() {
     reloadSettings();
+    initWakelock();
     super.initState();
 
     if (widget.type == EnvironmentType.desktop) {
@@ -71,12 +111,13 @@ class _DashboardState extends State<Dashboard> {
 
   void onSleep() {
     Logger.print("Sleeping...");
+    setWakelock(false);
   }
 
   void listen(Dexcom dexcom) {
     Logger.print("Starting listener...");
     provider?.close();
-    provider = DexcomStreamProvider(dexcom);
+    provider = DexcomStreamProvider(dexcom, debug: dexcomDebug);
 
     provider!.listen(onData: (data) async {
       readings = (data.elementAtOrNull(0), data.elementAtOrNull(1));
@@ -85,6 +126,7 @@ class _DashboardState extends State<Dashboard> {
       loading = false;
       setState(() {});
     }, onRefresh: () {
+      Logger.print("Refreshing...");
       loading = true;
       setState(() {});
     }, onTimerChange: (time) {
@@ -99,6 +141,29 @@ class _DashboardState extends State<Dashboard> {
 
     provider?.close();
     super.dispose();
+  }
+
+  Future<void> setFullscreen(bool input) async {
+    if (Environment.isWeb) {
+      if (input) {
+        html.document.documentElement?.requestFullscreen();
+      } else {
+        html.document.exitFullscreen();
+      }
+    } else {
+      if (Environment.isMobile) {
+        if (input) {
+          await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+        } else {
+          await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
+        }
+      } else if (Environment.isDesktop) {
+        await DesktopApplication.setFullScreen(input);
+      }
+    }
+
+    isFullscreen = input;
+    setState(() {});
   }
 
   @override
@@ -133,14 +198,23 @@ class _DashboardState extends State<Dashboard> {
                       Text("Setting to +${formatDuration(value)} (${DateFormat("MMMM d 'at' h:mm a").format(DateTime.now().add(Duration(seconds: value)))})"),
                       if (value <= 0)
                       Text("Setting to off"),
+                      if (wakelockEnabled == false)
+                      Text("Note: The sleep timer won't do anything because wakelock is already disabled."),
+                      if (wakelockEnabled == null)
+                      Text("Note: Wakelock is currently not functional, so the sleep timer will have no effect."),
                       Slider(value: value.clamp(60, 24 * 60 * 60).toDouble(), min: 60, max: 24 * 60 * 60, divisions: 1439, onChanged: (x) {
                         value = x.toInt();
                         setState(() {});
                       }),
-                      TextButton(onPressed: () {
-                        value = 0;
-                        setState(() {});
-                      }, child: Text("Turn Off")),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextButton(onPressed: () {
+                            value = 0;
+                            setState(() {});
+                          }, child: Text("Turn Off")),
+                        ],
+                      ),
                     ],
                   ),
                   actions: [
@@ -162,16 +236,6 @@ class _DashboardState extends State<Dashboard> {
               setState(() {});
             }
           }, icon: Icon(Icons.bed)),
-          IconButton(onPressed: () async {
-            await reloadSettings();
-            loading = true;
-            provider?.refresh();
-            setState(() {});
-          }, icon: loading ? Container(
-            width: iconSize,
-            height: iconSize,
-            child: CircularProgressIndicator(),
-          ) : Icon(Icons.refresh, size: iconSize)),
           if (settings != null)
           IconButton(onPressed: () async {
             await Navigator.push(
@@ -191,13 +255,48 @@ class _DashboardState extends State<Dashboard> {
           children: [
             if (readings?.$1 != null)
             ReadingWidget(reading: readings!.$1!, settings: settings, size: 64),
+            SizedBox(width: 8),
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (readings?.$2 != null)
                 ReadingWidget(reading: readings!.$2!, settings: settings, size: 32),
-                if ((settings?.showTimer ?? true) && provider?.time != null)
+                if ((settings?.showTimer ?? true) && readings != null && provider?.time != null)
                 Text("-${formatDuration(provider!.time)}", style: TextStyle(color: timerToColor(provider!.time), fontSize: 24)),
+              ],
+            ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Tooltip(
+                  message: loading ? "Refreshing" : "Refresh",
+                  child: IconButton(onPressed: () async {
+                    loading = true;
+                    setState(() {});
+                    await reloadSettings();
+                    provider?.refresh();
+                    setState(() {});
+                  }, icon: loading ? Container(
+                    width: iconSize,
+                    height: iconSize,
+                    child: CircularProgressIndicator(),
+                  ) : Icon(Icons.refresh, size: iconSize)),
+                ),
+                if (wakelockEnabled != null)
+                Tooltip(
+                  message: "Wakelock ${wakelockEnabled! ? "Enabled" : "Disabled"}",
+                  child: IconButton(onPressed: () async {
+                    await setWakelock(!wakelockEnabled!);
+                    wakelockEnabled = await WakelockPlus.enabled;
+                  }, icon: Icon(wakelockEnabled! ? Icons.lock_outline : Icons.lock_open)),
+                ),
+                Tooltip(
+                  message: "Toggle Fullscreen",
+                  child: IconButton(onPressed: () async {
+                    await setFullscreen(!isFullscreen);
+                    if (Environment.isDesktop) isFullscreen = await windowManager.isFullScreen();
+                  }, icon: Icon(isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen)),
+                ),
               ],
             ),
           ],

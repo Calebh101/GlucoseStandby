@@ -6,6 +6,7 @@ import 'package:dexcom/dexcom.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_environments_plus/flutter_environments_plus.dart';
+import 'package:flutter_window_close/flutter_window_close.dart';
 import 'package:restart_app/restart_app.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:styled_logger/styled_logger.dart';
@@ -27,6 +28,12 @@ void main(List<String> arguments) {
   }
 
   if (Environment.isDesktop) {
+    FlutterWindowClose.setWindowShouldCloseHandler(() async {
+      Logger.print("Overriding window close...");
+      await windowManager.hide();
+      return false;
+    });
+
     DesktopApplication.run(arguments.contains("--service"));
   } else {
     runApp(App(type: Environment.isWeb ? EnvironmentType.web : EnvironmentType.mobile));
@@ -39,9 +46,31 @@ enum EnvironmentType {
   web,
 }
 
-class App extends StatelessWidget {
+class App extends StatefulWidget {
   final EnvironmentType type;
   const App({super.key, required this.type});
+
+  @override
+  State<App> createState() => _AppState();
+}
+
+class _AppState extends State<App> with TrayListener {
+  @override
+  void initState() {
+    trayManager.addListener(this);
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    trayManager.removeListener(this);
+    super.dispose();
+  }
+
+  @override
+  void onTrayIconMouseDown() {
+    trayManager.popUpContextMenu();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +83,7 @@ class App extends StatelessWidget {
         scaffoldBackgroundColor: Colors.black,
         fontFamily: defaultFont,
       ),
-      home: Dashboard(type: type),
+      home: Dashboard(type: widget.type),
     );
   }
 }
@@ -140,12 +169,13 @@ class DesktopApplication {
     );
 
     await windowManager.ensureInitialized();
-    await windowManager.setPreventClose(true);
-    await windowManager.setMinimizable(false);
+    await windowManager.setMinimizable(true);
     await windowManager.setMaximizable(false);
-    await windowManager.setClosable(false);
-    await windowManager.waitUntilReadyToShow(options);
+    await windowManager.setClosable(true);
+    await windowManager.setPreventClose(false);
+    await windowManager.setResizable(true);
 
+    await windowManager.waitUntilReadyToShow(options);
     Logger.print("Showing window... (size: ${await windowManager.getSize()})");
 
     await windowManager.show();
@@ -182,5 +212,11 @@ class DesktopApplication {
   static Future<void> update([DexcomReading? reading]) async {
     if (reading != null) if (DateTime.now().difference(reading.systemTime) > Duration(minutes: 10)) reading = null;
     await trayManager.setContextMenu(getMenu(reading));
+  }
+
+  static Future<void> setFullScreen([bool? input]) async {
+    input ??= await windowManager.isFullScreen();
+    Logger.print("Setting desktop fullscreen to value $input...");
+    await windowManager.setFullScreen(input);
   }
 }
