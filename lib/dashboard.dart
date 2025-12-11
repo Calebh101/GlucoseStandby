@@ -36,8 +36,8 @@ class _DashboardState extends State<Dashboard> {
   bool isFullscreen = false;
   int sleepTimer = 0;
 
-  late Timer timer;
-  late Timer sleepTimerTimer;
+  Timer? timer;
+  Timer? sleepTimerTimer;
 
   Future<void> reloadSettings() async {
     Logger.print("Reloading settings...");
@@ -87,9 +87,12 @@ class _DashboardState extends State<Dashboard> {
 
   @override
   void initState() {
-    reloadSettings();
-    initWakelock();
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      reloadSettings();
+      initWakelock();
+    });
 
     if (widget.type == EnvironmentType.desktop) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -138,8 +141,8 @@ class _DashboardState extends State<Dashboard> {
 
   @override
   void dispose() {
-    timer.cancel();
-    sleepTimerTimer.cancel();
+    timer?.cancel();
+    sleepTimerTimer?.cancel();
 
     provider?.close();
     super.dispose();
@@ -175,87 +178,88 @@ class _DashboardState extends State<Dashboard> {
     return Scaffold(
       body: Stack(
         children: [
-          Positioned(
-            top: 0,
-            right: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(onPressed: () async {
-                    int value = sleepTimer;
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(onPressed: () async {
+                      int value = sleepTimer;
 
-                    bool? result = await showDialog<bool>(context: context, builder: (context) => StatefulBuilder(
-                      builder: (context, setState) {
-                        Timer timer = Timer.periodic(Duration(milliseconds: 1000), (timer) {
-                          if (!context.mounted) return timer.cancel();
-                          setState(() {});
-                        });
+                      bool? result = await showDialog<bool>(context: context, builder: (context) => StatefulBuilder(
+                        builder: (context, setState) {
+                          Timer timer = Timer.periodic(Duration(milliseconds: 1000), (timer) {
+                            if (!context.mounted) return timer.cancel();
+                            setState(() {});
+                          });
 
-                        return AlertDialog(
-                          title: Text("Sleep Timer"),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (sleepTimer > 0)
-                              Text("-${formatDuration(sleepTimer)} Remaining (${DateFormat("MMMM d 'at' h:mm a").format(DateTime.now().add(Duration(seconds: sleepTimer)))})"),
-                              if (sleepTimer <= 0)
-                              Text("Currently off"),
-                              if (value > 0)
-                              Text("Setting to +${formatDuration(value)} (${DateFormat("MMMM d 'at' h:mm a").format(DateTime.now().add(Duration(seconds: value)))})"),
-                              if (value <= 0)
-                              Text("Setting to off"),
-                              if (wakelockEnabled == false)
-                              Text("Note: The sleep timer won't do anything because wakelock is already disabled."),
-                              if (wakelockEnabled == null)
-                              Text("Note: Wakelock is currently not functional, so the sleep timer will have no effect."),
-                              Slider(value: value.clamp(60, 24 * 60 * 60).toDouble(), min: 60, max: 24 * 60 * 60, divisions: 1439, onChanged: (x) {
-                                value = x.toInt();
-                                setState(() {});
-                              }),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  TextButton(onPressed: () {
-                                    value = 0;
-                                    setState(() {});
-                                  }, child: Text("Turn Off")),
-                                ],
-                              ),
+                          return AlertDialog(
+                            title: Text("Sleep Timer"),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (sleepTimer > 0)
+                                Text("-${formatDuration(sleepTimer)} Remaining (${DateFormat("MMMM d 'at' h:mm a").format(DateTime.now().add(Duration(seconds: sleepTimer)))})"),
+                                if (sleepTimer <= 0)
+                                Text("Currently off"),
+                                if (value > 0)
+                                Text("Setting to +${formatDuration(value)} (${DateFormat("MMMM d 'at' h:mm a").format(DateTime.now().add(Duration(seconds: value)))})"),
+                                if (value <= 0)
+                                Text("Setting to off"),
+                                if (wakelockEnabled == false)
+                                Text("Note: The sleep timer won't do anything because wakelock is already disabled."),
+                                if (wakelockEnabled == null)
+                                Text("Note: Wakelock is currently not functional, so the sleep timer will have no effect."),
+                                Slider(value: value.clamp(60, 24 * 60 * 60).toDouble(), min: 60, max: 24 * 60 * 60, divisions: 1439, onChanged: (x) {
+                                  value = x.toInt();
+                                  setState(() {});
+                                }),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    TextButton(onPressed: () {
+                                      value = 0;
+                                      setState(() {});
+                                    }, child: Text("Turn Off")),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            actions: [
+                              TextButton(onPressed: () {
+                                timer.cancel();
+                                Navigator.of(context).pop(false);
+                              }, child: Text("Cancel")),
+                              TextButton(onPressed: () {
+                                timer.cancel();
+                                Navigator.of(context).pop(true);
+                              }, child: Text("OK")),
                             ],
-                          ),
-                          actions: [
-                            TextButton(onPressed: () {
-                              timer.cancel();
-                              Navigator.of(context).pop(false);
-                            }, child: Text("Cancel")),
-                            TextButton(onPressed: () {
-                              timer.cancel();
-                              Navigator.of(context).pop(true);
-                            }, child: Text("OK")),
-                          ],
-                        );
+                          );
+                        }
+                      ));
+
+                      if (result == true) {
+                        sleepTimer = value;
+                        setState(() {});
                       }
-                    ));
+                    }, icon: Icon(Icons.bed)),
+                    if (settings != null)
+                    IconButton(onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SettingsWidget(settings: settings!),
+                        ),
+                      );
 
-                    if (result == true) {
-                      sleepTimer = value;
-                      setState(() {});
-                    }
-                  }, icon: Icon(Icons.bed)),
-                  if (settings != null)
-                  IconButton(onPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => SettingsWidget(settings: settings!),
-                      ),
-                    );
-
-                    await reloadSettings();
-                  }, icon: Icon(Icons.settings, size: iconSize)),
-                ],
+                      await reloadSettings();
+                    }, icon: Icon(Icons.settings, size: iconSize)),
+                  ],
+                ),
               ),
             ),
           ),
