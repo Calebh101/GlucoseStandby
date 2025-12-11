@@ -31,7 +31,7 @@ class _DashboardState extends State<Dashboard> {
   DexcomStreamProvider? provider;
   (DexcomReading?, DexcomReading?)? readings; // Latest, next latest
   Settings? settings;
-  bool loading = true;
+  bool loading = false;
   bool? wakelockEnabled = false;
   bool isFullscreen = false;
   int sleepTimer = 0;

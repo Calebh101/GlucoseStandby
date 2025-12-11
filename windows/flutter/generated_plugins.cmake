@@ -3,7 +3,6 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  audioplayers_windows
   flutter_window_close
   screen_retriever_windows
   tray_manager
