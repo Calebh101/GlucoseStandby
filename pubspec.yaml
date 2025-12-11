@@ -36,6 +36,11 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+  recursive_caster:
+    git:
+      url: https://github.com/Calebh101/dart-recursive-caster.git
+      ref: main
+
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.14.1
   flutter_native_splash: ^2.4.3

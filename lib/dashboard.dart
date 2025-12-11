@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
+import 'package:GlucoseStandby/recursive_caster.g.dart';
 import 'package:GlucoseStandby/settings.dart';
 import 'package:GlucoseStandby/util.dart';
 import 'package:dexcom/dexcom.dart';
@@ -34,6 +36,7 @@ class _DashboardState extends State<Dashboard> {
   bool? wakelockEnabled = false;
   bool isFullscreen = false;
   int sleepTimer = 0;
+  bool isOld = true;
 
   // 0: Not loading
   // 1: Fetching account ID
@@ -119,6 +122,22 @@ class _DashboardState extends State<Dashboard> {
       initWakelock();
     });
 
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? pref = prefs.getString("lastReading");
+      if (pref == null) return;
+
+      try {
+        Map<String, dynamic> output = RecursiveCaster.cast(jsonDecode(pref));
+        DexcomReading reading = DexcomReading.fromJson(output);
+        readings = (reading, readings?.$2);
+        setState(() {});
+      } catch (e) {
+        Logger.warn("Unrecoverable error with last reading preference: $e\n\nOutput: $pref");
+        await prefs.remove("lastReading");
+      }
+    });
+
     if (widget.type == EnvironmentType.desktop) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         timer = Timer.periodic(Duration(seconds: 30), (timer) {
@@ -152,7 +171,13 @@ class _DashboardState extends State<Dashboard> {
       await reloadSettings();
       await DesktopApplication.update(readings?.$1);
       loading = 0;
+      isOld = false;
       setState(() {});
+
+      if (readings?.$1 == null) return;
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      Logger.print("Saving last reading...");
+      await prefs.setString("lastReading", jsonEncode(readings!.$1!.toJson()));
     }, onRefresh: () {
       Logger.print("Refreshing...");
       loading = 3;
@@ -299,16 +324,19 @@ class _DashboardState extends State<Dashboard> {
                   children: [
                     if (readings?.$1 != null)
                     ReadingWidget(reading: readings!.$1!, settings: settings, size: 64 * sizeMultiplier),
-                    SizedBox(width: 8 * sizeMultiplier),
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (readings?.$2 != null)
                         ReadingWidget(reading: readings!.$2!, settings: settings, size: 32 * sizeMultiplier),
                         if ((settings?.showTimer ?? true) && readings != null && provider?.time != null)
-                        Text("-${formatDuration(provider!.time)}", style: TextStyle(color: timerToColor(provider!.time), fontSize: 24 * sizeMultiplier)),
+                        if (!isOld)
+                        Text("-${formatDuration(provider!.time)}", style: TextStyle(color: timerToColor(provider!.time), fontSize: 24 * sizeMultiplier))
+                        else
+                        Text("Old", style: TextStyle(color: Colors.red, fontSize: 24 * sizeMultiplier)),
                       ],
                     ),
+                    SizedBox(width: 8 * sizeMultiplier),
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [

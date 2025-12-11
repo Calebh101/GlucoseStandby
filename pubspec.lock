@@ -449,6 +449,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.0"
+  recursive_caster:
+    dependency: "direct dev"
+    description:
+      path: "."
+      ref: main
+      resolved-ref: "57813f24778060689a898d8a1f2c1f4b4609ba1b"
+      url: "https://github.com/Calebh101/dart-recursive-caster.git"
+    source: git
+    version: "0.0.0"
   restart_app:
     dependency: "direct main"
     description:

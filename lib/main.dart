@@ -222,8 +222,9 @@ class DesktopApplication {
     // Weird quirk
     if (input == true) {
       await hide();
-      await show();
-      await windowManager.focus();
     }
+
+    await show();
+    await windowManager.focus();
   }
 }
