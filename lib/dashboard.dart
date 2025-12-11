@@ -6,6 +6,7 @@ import 'package:GlucoseStandby/recursive_caster.g.dart';
 import 'package:GlucoseStandby/settings.dart';
 import 'package:GlucoseStandby/util.dart';
 import 'package:dexcom/dexcom.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:GlucoseStandby/main.dart';
 import 'package:flutter/services.dart';
@@ -37,15 +38,16 @@ class _DashboardState extends State<Dashboard> {
   bool isFullscreen = false;
   int sleepTimer = 0;
   bool isOld = true;
+  double dim = 0;
+
+  Timer? timer;
+  Timer? sleepTimerTimer;
 
   // 0: Not loading
   // 1: Fetching account ID
   // 2: Fetching session ID
   // 3: Fetching glucose
   int loading = 0;
-
-  Timer? timer;
-  Timer? sleepTimerTimer;
 
   Future<void> reloadSettings() async {
     Logger.print("Reloading settings...");
@@ -236,78 +238,120 @@ class _DashboardState extends State<Dashboard> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(onPressed: () async {
-                      int value = sleepTimer;
-
-                      bool? result = await showDialog<bool>(context: context, builder: (context) => StatefulBuilder(
-                        builder: (context, setState) {
-                          Timer timer = Timer.periodic(Duration(milliseconds: 1000), (timer) {
-                            if (!context.mounted) return timer.cancel();
-                            setState(() {});
-                          });
-
-                          return AlertDialog(
-                            title: Text("Sleep Timer"),
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (sleepTimer > 0)
-                                Text("-${formatDuration(sleepTimer)} Remaining (${DateFormat("MMMM d 'at' h:mm a").format(DateTime.now().add(Duration(seconds: sleepTimer)))})"),
-                                if (sleepTimer <= 0)
-                                Text("Currently off"),
-                                if (value > 0)
-                                Text("Setting to +${formatDuration(value)} (${DateFormat("MMMM d 'at' h:mm a").format(DateTime.now().add(Duration(seconds: value)))})"),
-                                if (value <= 0)
-                                Text("Setting to off"),
-                                if (wakelockEnabled == false)
-                                Text("Note: The sleep timer won't do anything because wakelock is already disabled."),
-                                if (wakelockEnabled == null)
-                                Text("Note: Wakelock is currently not functional, so the sleep timer will have no effect."),
-                                Slider(value: value.clamp(60, 24 * 60 * 60).toDouble(), min: 60, max: 24 * 60 * 60, divisions: 1439, onChanged: (x) {
-                                  value = x.toInt();
-                                  setState(() {});
-                                }),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    TextButton(onPressed: () {
-                                      value = 0;
-                                      setState(() {});
-                                    }, child: Text("Turn Off")),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            actions: [
-                              TextButton(onPressed: () {
-                                timer.cancel();
-                                Navigator.of(context).pop(false);
-                              }, child: Text("Cancel")),
-                              TextButton(onPressed: () {
-                                timer.cancel();
-                                Navigator.of(context).pop(true);
-                              }, child: Text("OK")),
-                            ],
-                          );
+                    if (kDebugMode && provider != null)
+                    Tooltip(
+                      message: "Pause/unpause the listener (debug option)",
+                      child: IconButton(onPressed: () {
+                        if (provider!.paused) {
+                          provider!.unpause();
+                        } else {
+                          provider!.pause();
                         }
-                      ));
 
-                      if (result == true) {
-                        sleepTimer = value;
                         setState(() {});
-                      }
-                    }, icon: Icon(Icons.bed)),
-                    if (settings != null)
-                    IconButton(onPressed: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => SettingsWidget(settings: settings!),
-                        ),
-                      );
+                      }, icon: Icon(provider!.paused ? Icons.play_arrow : Icons.pause)),
+                    ),
+                    Tooltip(
+                      message: "Dim",
+                      child: IconButton(onPressed: () async {
+                        final child = StatefulBuilder(
+                          builder: (context, setState) => Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(width: context.screenSize.width * 0.9),
+                              Slider(value: (1 - dim) * 100, min: 0, max: 100, onChanged: (value) {
+                                dim = 1 - (value / 100);
+                                setState(() {});
+                              }),
+                              SizedBox(
+                                height: 30,
+                                child: dim > 0.9 ? Text("Warning! Setting your brightness to this could make the screen unseeable!") : null,
+                              ),
+                            ],
+                          ),
+                        );
 
-                      await reloadSettings();
-                    }, icon: Icon(Icons.settings, size: iconSize)),
+                        SimpleDialogue.show(context: context, title: "Brightness", content: child);
+                      }, icon: Icon(Icons.sunny)),
+                    ),
+                    Tooltip(
+                      message: "Sleep timer",
+                      child: IconButton(onPressed: () async {
+                        int value = sleepTimer;
+
+                        bool? result = await showDialog<bool>(context: context, builder: (context) => StatefulBuilder(
+                          builder: (context, setState) {
+                            Timer timer = Timer.periodic(Duration(milliseconds: 1000), (timer) {
+                              if (!context.mounted) return timer.cancel();
+                              setState(() {});
+                            });
+
+                            return AlertDialog(
+                              title: Text("Sleep Timer"),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (sleepTimer > 0)
+                                  Text("-${formatDuration(sleepTimer)} Remaining (${DateFormat("MMMM d 'at' h:mm a").format(DateTime.now().add(Duration(seconds: sleepTimer)))})"),
+                                  if (sleepTimer <= 0)
+                                  Text("Currently off"),
+                                  if (value > 0)
+                                  Text("Setting to +${formatDuration(value)} (${DateFormat("MMMM d 'at' h:mm a").format(DateTime.now().add(Duration(seconds: value)))})"),
+                                  if (value <= 0)
+                                  Text("Setting to off"),
+                                  if (wakelockEnabled == false)
+                                  Text("Note: The sleep timer won't do anything because wakelock is already disabled."),
+                                  if (wakelockEnabled == null)
+                                  Text("Note: Wakelock is currently not functional, so the sleep timer will have no effect."),
+                                  Slider(value: value.clamp(60, 24 * 60 * 60).toDouble(), min: 60, max: 24 * 60 * 60, divisions: 1439, onChanged: (x) {
+                                    value = x.toInt();
+                                    setState(() {});
+                                  }),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      TextButton(onPressed: () {
+                                        value = 0;
+                                        setState(() {});
+                                      }, child: Text("Turn Off")),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(onPressed: () {
+                                  timer.cancel();
+                                  Navigator.of(context).pop(false);
+                                }, child: Text("Cancel")),
+                                TextButton(onPressed: () {
+                                  timer.cancel();
+                                  Navigator.of(context).pop(true);
+                                }, child: Text("OK")),
+                              ],
+                            );
+                          }
+                        ));
+
+                        if (result == true) {
+                          sleepTimer = value;
+                          setState(() {});
+                        }
+                      }, icon: Icon(Icons.bed)),
+                    ),
+                    if (settings != null)
+                    Tooltip(
+                      message: "Settings",
+                      child: IconButton(onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => SettingsWidget(settings: settings!),
+                          ),
+                        );
+
+                        await reloadSettings();
+                      }, icon: Icon(Icons.settings, size: iconSize)),
+                    ),
                   ],
                 ),
               ),
@@ -383,6 +427,21 @@ class _DashboardState extends State<Dashboard> {
                 ),
               );
             }
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Container(
+                color: Colors.black.withOpacity(dim),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: Listener(
+              behavior: HitTestBehavior.translucent,
+              onPointerDown: (event) {
+                Logger.print("Screen tapped");
+              },
+            ),
           ),
         ],
       ),
