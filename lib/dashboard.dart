@@ -131,7 +131,9 @@ class _DashboardState extends State<Dashboard> {
       setState(() {});
     }, onTimerChange: (time) {
       setState(() {});
-    },);
+    });
+
+    provider!.refresh();
   }
 
   @override
@@ -171,136 +173,152 @@ class _DashboardState extends State<Dashboard> {
     final double iconSize = 24;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        centerTitle: true,
-        actions: [
-          IconButton(onPressed: () async {
-            int value = sleepTimer;
+      body: Stack(
+        children: [
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(onPressed: () async {
+                    int value = sleepTimer;
 
-            bool? result = await showDialog<bool>(context: context, builder: (context) => StatefulBuilder(
-              builder: (context, setState) {
-                Timer timer = Timer.periodic(Duration(milliseconds: 1000), (timer) {
-                  if (!context.mounted) return timer.cancel();
-                  setState(() {});
-                });
+                    bool? result = await showDialog<bool>(context: context, builder: (context) => StatefulBuilder(
+                      builder: (context, setState) {
+                        Timer timer = Timer.periodic(Duration(milliseconds: 1000), (timer) {
+                          if (!context.mounted) return timer.cancel();
+                          setState(() {});
+                        });
 
-                return AlertDialog(
-                  title: Text("Sleep Timer"),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (sleepTimer > 0)
-                      Text("-${formatDuration(sleepTimer)} Remaining (${DateFormat("MMMM d 'at' h:mm a").format(DateTime.now().add(Duration(seconds: sleepTimer)))})"),
-                      if (sleepTimer <= 0)
-                      Text("Currently off"),
-                      if (value > 0)
-                      Text("Setting to +${formatDuration(value)} (${DateFormat("MMMM d 'at' h:mm a").format(DateTime.now().add(Duration(seconds: value)))})"),
-                      if (value <= 0)
-                      Text("Setting to off"),
-                      if (wakelockEnabled == false)
-                      Text("Note: The sleep timer won't do anything because wakelock is already disabled."),
-                      if (wakelockEnabled == null)
-                      Text("Note: Wakelock is currently not functional, so the sleep timer will have no effect."),
-                      Slider(value: value.clamp(60, 24 * 60 * 60).toDouble(), min: 60, max: 24 * 60 * 60, divisions: 1439, onChanged: (x) {
-                        value = x.toInt();
-                        setState(() {});
-                      }),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TextButton(onPressed: () {
-                            value = 0;
-                            setState(() {});
-                          }, child: Text("Turn Off")),
-                        ],
+                        return AlertDialog(
+                          title: Text("Sleep Timer"),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (sleepTimer > 0)
+                              Text("-${formatDuration(sleepTimer)} Remaining (${DateFormat("MMMM d 'at' h:mm a").format(DateTime.now().add(Duration(seconds: sleepTimer)))})"),
+                              if (sleepTimer <= 0)
+                              Text("Currently off"),
+                              if (value > 0)
+                              Text("Setting to +${formatDuration(value)} (${DateFormat("MMMM d 'at' h:mm a").format(DateTime.now().add(Duration(seconds: value)))})"),
+                              if (value <= 0)
+                              Text("Setting to off"),
+                              if (wakelockEnabled == false)
+                              Text("Note: The sleep timer won't do anything because wakelock is already disabled."),
+                              if (wakelockEnabled == null)
+                              Text("Note: Wakelock is currently not functional, so the sleep timer will have no effect."),
+                              Slider(value: value.clamp(60, 24 * 60 * 60).toDouble(), min: 60, max: 24 * 60 * 60, divisions: 1439, onChanged: (x) {
+                                value = x.toInt();
+                                setState(() {});
+                              }),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  TextButton(onPressed: () {
+                                    value = 0;
+                                    setState(() {});
+                                  }, child: Text("Turn Off")),
+                                ],
+                              ),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(onPressed: () {
+                              timer.cancel();
+                              Navigator.of(context).pop(false);
+                            }, child: Text("Cancel")),
+                            TextButton(onPressed: () {
+                              timer.cancel();
+                              Navigator.of(context).pop(true);
+                            }, child: Text("OK")),
+                          ],
+                        );
+                      }
+                    ));
+
+                    if (result == true) {
+                      sleepTimer = value;
+                      setState(() {});
+                    }
+                  }, icon: Icon(Icons.bed)),
+                  if (settings != null)
+                  IconButton(onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SettingsWidget(settings: settings!),
                       ),
-                    ],
-                  ),
-                  actions: [
-                    TextButton(onPressed: () {
-                      timer.cancel();
-                      Navigator.of(context).pop(false);
-                    }, child: Text("Cancel")),
-                    TextButton(onPressed: () {
-                      timer.cancel();
-                      Navigator.of(context).pop(true);
-                    }, child: Text("OK")),
-                  ],
-                );
-              }
-            ));
+                    );
 
-            if (result == true) {
-              sleepTimer = value;
-              setState(() {});
-            }
-          }, icon: Icon(Icons.bed)),
-          if (settings != null)
-          IconButton(onPressed: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => SettingsWidget(settings: settings!),
-              ),
-            );
-
-            await reloadSettings();
-          }, icon: Icon(Icons.settings, size: iconSize)),
-        ],
-      ),
-      body: Center(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (readings?.$1 != null)
-            ReadingWidget(reading: readings!.$1!, settings: settings, size: 64),
-            SizedBox(width: 8),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (readings?.$2 != null)
-                ReadingWidget(reading: readings!.$2!, settings: settings, size: 32),
-                if ((settings?.showTimer ?? true) && readings != null && provider?.time != null)
-                Text("-${formatDuration(provider!.time)}", style: TextStyle(color: timerToColor(provider!.time), fontSize: 24)),
-              ],
-            ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Tooltip(
-                  message: loading ? "Refreshing" : "Refresh",
-                  child: IconButton(onPressed: () async {
-                    loading = true;
-                    setState(() {});
                     await reloadSettings();
-                    provider?.refresh();
-                    setState(() {});
-                  }, icon: loading ? Container(
-                    width: iconSize,
-                    height: iconSize,
-                    child: CircularProgressIndicator(),
-                  ) : Icon(Icons.refresh, size: iconSize)),
-                ),
-                if (wakelockEnabled != null)
-                Tooltip(
-                  message: "Wakelock ${wakelockEnabled! ? "Enabled" : "Disabled"}",
-                  child: IconButton(onPressed: () async {
-                    await setWakelock(!wakelockEnabled!);
-                    wakelockEnabled = await WakelockPlus.enabled;
-                  }, icon: Icon(wakelockEnabled! ? Icons.lock_outline : Icons.lock_open)),
-                ),
-                Tooltip(
-                  message: "Toggle Fullscreen",
-                  child: IconButton(onPressed: () async {
-                    await setFullscreen(!isFullscreen);
-                    if (Environment.isDesktop) isFullscreen = await windowManager.isFullScreen();
-                  }, icon: Icon(isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen)),
-                ),
-              ],
+                  }, icon: Icon(Icons.settings, size: iconSize)),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+          Builder(
+            builder: (context) {
+              double sizeMultiplier = mapRange(context.screenSize.width.clamp(100, 2000), inMin: 100, inMax: 2000, outMin: 0.5, outMax: 4);
+
+              return Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (readings?.$1 != null)
+                    ReadingWidget(reading: readings!.$1!, settings: settings, size: 64 * sizeMultiplier),
+                    SizedBox(width: 8 * sizeMultiplier),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (readings?.$2 != null)
+                        ReadingWidget(reading: readings!.$2!, settings: settings, size: 32 * sizeMultiplier),
+                        if ((settings?.showTimer ?? true) && readings != null && provider?.time != null)
+                        Text("-${formatDuration(provider!.time)}", style: TextStyle(color: timerToColor(provider!.time), fontSize: 24 * sizeMultiplier)),
+                      ],
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Tooltip(
+                          message: loading ? "Refreshing" : "Refresh",
+                          child: IconButton(onPressed: () async {
+                            loading = true;
+                            setState(() {});
+                            await reloadSettings();
+                            provider?.refresh();
+                            setState(() {});
+                          }, icon: loading ? Container(
+                            width: iconSize,
+                            height: iconSize,
+                            child: CircularProgressIndicator(),
+                          ) : Icon(Icons.refresh, size: iconSize)),
+                        ),
+                        if (wakelockEnabled != null)
+                        Tooltip(
+                          message: "Wakelock ${wakelockEnabled! ? "Enabled" : "Disabled"}",
+                          child: IconButton(onPressed: () async {
+                            await setWakelock(!wakelockEnabled!);
+                            wakelockEnabled = await WakelockPlus.enabled;
+                          }, icon: Icon(wakelockEnabled! ? Icons.lock_outline : Icons.lock_open)),
+                        ),
+                        Tooltip(
+                          message: "Toggle Fullscreen",
+                          child: IconButton(onPressed: () async {
+                            await setFullscreen(!isFullscreen);
+                            if (Environment.isDesktop) isFullscreen = await windowManager.isFullScreen();
+                          }, icon: Icon(isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }
+          ),
+        ],
       ),
     );
   }

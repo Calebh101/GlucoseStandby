@@ -218,5 +218,12 @@ class DesktopApplication {
     input ??= await windowManager.isFullScreen();
     Logger.print("Setting desktop fullscreen to value $input...");
     await windowManager.setFullScreen(input);
+
+    // Weird quirk
+    if (input == true) {
+      await hide();
+      await show();
+      await windowManager.focus();
+    }
   }
 }

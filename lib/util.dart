@@ -93,3 +93,12 @@ String formatDuration(int seconds, {bool forceIncludeHours = false}) {
     return "$minutes:$secs";
   }
 }
+
+double mapRange(double value, {
+  required double inMin,
+  required double inMax,
+  required double outMin,
+  required double outMax,
+}) {
+  return outMin + (value - inMin) * (outMax - outMin) / (inMax - inMin);
+}
