@@ -116,10 +116,9 @@ packages:
   dexcom:
     dependency: "direct main"
     description:
-      name: dexcom
-      sha256: "0e828fb04a432a43ebdf26954bdb727e6853bf6a0de334194944a7eb257ea4b1"
-      url: "https://pub.dev"
-    source: hosted
+      path: "/home/caleb/projects/other/dexcom/dart"
+      relative: false
+    source: path
     version: "1.0.8"
   fake_async:
     dependency: transitive

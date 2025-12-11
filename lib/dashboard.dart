@@ -31,10 +31,15 @@ class _DashboardState extends State<Dashboard> {
   DexcomStreamProvider? provider;
   (DexcomReading?, DexcomReading?)? readings; // Latest, next latest
   Settings? settings;
-  bool loading = false;
   bool? wakelockEnabled = false;
   bool isFullscreen = false;
   int sleepTimer = 0;
+
+  // 0: Not loading
+  // 1: Fetching account ID
+  // 2: Fetching session ID
+  // 3: Fetching glucose
+  int loading = 0;
 
   Timer? timer;
   Timer? sleepTimerTimer;
@@ -48,7 +53,27 @@ class _DashboardState extends State<Dashboard> {
     String? password = prefs.getString("password");
 
     if ((username != dexcom?.username || password != dexcom?.password) && username != null && password != null) {
-      dexcom = Dexcom(username: username, password: password, debug: dexcomDebug);
+      dexcom = Dexcom(username: username, password: password, debug: dexcomDebug, onStatusUpdate: (status, finished) {
+        Logger.print("Status update: $status (finished: $finished)");
+
+        switch (status) {
+          case DexcomUpdateStatus.fetchingAccountId:
+            if (!finished) loading = 1;
+            setState(() {});
+            break;
+          case DexcomUpdateStatus.fetchingSessionId:
+            if (!finished) loading = 2;
+            setState(() {});
+            break;
+          case DexcomUpdateStatus.fetchingGlucose:
+            if (!finished) loading = 3;
+            setState(() {});
+            break;
+          default:
+            break;
+        }
+      });
+
       listen(dexcom!);
     }
 
@@ -126,11 +151,11 @@ class _DashboardState extends State<Dashboard> {
       readings = (data.elementAtOrNull(0), data.elementAtOrNull(1));
       await reloadSettings();
       await DesktopApplication.update(readings?.$1);
-      loading = false;
+      loading = 0;
       setState(() {});
     }, onRefresh: () {
       Logger.print("Refreshing...");
-      loading = true;
+      loading = 3;
       setState(() {});
     }, onTimerChange: (time) {
       setState(() {});
@@ -265,6 +290,7 @@ class _DashboardState extends State<Dashboard> {
           ),
           Builder(
             builder: (context) {
+              double maxLoading = 3;
               double sizeMultiplier = mapRange(context.screenSize.width.clamp(100, 2000), inMin: 100, inMax: 2000, outMin: 0.5, outMax: 4);
 
               return Center(
@@ -286,15 +312,23 @@ class _DashboardState extends State<Dashboard> {
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        if (loading > 0 && loading < maxLoading)
+                        Container(
+                          width: iconSize,
+                          height: 4,
+                          child: LinearProgressIndicator(
+                            value: loading / maxLoading,
+                          ),
+                        ),
                         Tooltip(
-                          message: loading ? "Refreshing" : "Refresh",
+                          message: loading > 0 ? "Refreshing" : "Refresh",
                           child: IconButton(onPressed: () async {
-                            loading = true;
+                            loading = 3;
                             setState(() {});
                             await reloadSettings();
                             provider?.refresh();
                             setState(() {});
-                          }, icon: loading ? Container(
+                          }, icon: loading > 0 ? Container(
                             width: iconSize,
                             height: iconSize,
                             child: CircularProgressIndicator(),
