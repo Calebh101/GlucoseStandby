@@ -21,6 +21,9 @@ jobs:
       - name: Fetch dependencies
         run: flutter pub get
 
+      - name: Setup
+        run: dart run recursive_caster
+
       - name: Build Flutter Web
         run: flutter build web --release --base-href /GlucoseStandby/
 
