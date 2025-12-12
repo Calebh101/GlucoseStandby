@@ -300,8 +300,8 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _saveCredentials() async {
-    String username = usernameController.text.toString();
-    String password = passwordController.text.toString();
+    String username = usernameController.text.toString().trim();
+    String password = passwordController.text.toString().trim();
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var dexcom = Dexcom(username: username, password: password);

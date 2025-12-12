@@ -49,7 +49,7 @@ class _DashboardState extends State<Dashboard> {
   // 3: Fetching glucose
   int loading = 0;
 
-  Future<void> reloadSettings() async {
+  Future<void> reloadSettings([bool firstTime = false]) async {
     Logger.print("Reloading settings...");
     SharedPreferences prefs = await SharedPreferences.getInstance();
     settings = Settings.fromPrefs(prefs);
@@ -57,7 +57,7 @@ class _DashboardState extends State<Dashboard> {
     String? username = prefs.getString("username");
     String? password = prefs.getString("password");
 
-    if ((username != dexcom?.username || password != dexcom?.password) && username != null && password != null) {
+    if (firstTime || (username != dexcom?.username || password != dexcom?.password) && username != null && password != null) {
       dexcom = Dexcom(username: username, password: password, debug: dexcomDebug, onStatusUpdate: (status, finished) {
         Logger.print("Status update: $status (finished: $finished)");
 
@@ -120,7 +120,7 @@ class _DashboardState extends State<Dashboard> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      reloadSettings();
+      reloadSettings(true);
       initWakelock();
     });
 
@@ -264,8 +264,8 @@ class _DashboardState extends State<Dashboard> {
                                 setState(() {});
                               }),
                               SizedBox(
-                                height: 30,
-                                child: dim > 0.9 ? Text("Warning! Setting your brightness to this could make the screen unseeable!") : null,
+                                height: 80,
+                                child: dim > 0.9 ? Center(child: Text("Warning! Setting your brightness to this could make the screen unseeable!")) : null,
                               ),
                             ],
                           ),
