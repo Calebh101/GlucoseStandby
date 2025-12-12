@@ -171,7 +171,7 @@ class _DashboardState extends State<Dashboard> {
     provider!.listen(onData: (data) async {
       readings = (data.elementAtOrNull(0), data.elementAtOrNull(1));
       await reloadSettings();
-      await DesktopApplication.update(readings?.$1);
+      if (widget.type == EnvironmentType.desktop) await DesktopApplication.update(readings?.$1);
       loading = 0;
       isOld = false;
       setState(() {});
