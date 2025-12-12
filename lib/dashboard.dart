@@ -282,7 +282,7 @@ class _DashboardState extends State<Dashboard> {
                               Slider(value: (1 - dim) * 100, min: 0, max: 100, onChanged: (value) {
                                 dim = 1 - (value / 100);
                                 setState(() {});
-                              }),
+                              }, activeColor: Colors.redAccent, inactiveColor: Colors.redAccent.shade100.withValues(alpha: 0.7)),
                               SizedBox(
                                 height: 80,
                                 child: dim > 0.9 ? Center(child: Text("Warning! Setting your brightness to this could make the screen unseeable!")) : null,
@@ -327,7 +327,7 @@ class _DashboardState extends State<Dashboard> {
                                   Slider(value: value.clamp(60, maxSleepTimer * 60 * 60).toDouble(), min: 60, max: maxSleepTimer * 60 * 60, divisions: 1439, onChanged: (x) {
                                     value = x.toInt();
                                     setState(() {});
-                                  }),
+                                  }, activeColor: Colors.redAccent, inactiveColor: Colors.redAccent.shade100.withValues(alpha: 0.7)),
                                   Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
