@@ -2,6 +2,13 @@
 
 A small application to let you see your Dexcom CGM blood glucose data in the background.
 
+This app can work on desktop, mobile, and the web. **Note**: The web version currently doesn't work due to CORS issues.
+
+## Notes
+
+- This app has no blue light in the main glucose widget.
+- The sleep timer doesn't actually sleep your device when it goes off; it disables wakelock. This means the app tells the device that it can go to sleep whenever it wants. However long it waits is dependant on your device settings.
+
 # Can I trust this app?
 
 Asking the creator of the app is bold... but yes you can. It's open source and only requests Dexcom's servers. (I don't even track analytics; I know people's health data can be sensitive to some)

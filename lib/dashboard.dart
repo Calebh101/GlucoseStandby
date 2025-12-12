@@ -20,6 +20,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:window_manager/window_manager.dart';
 
 const bool dexcomDebug = false;
+const int maxSleepTimer = 12; // hours
 
 class Dashboard extends StatefulWidget {
   final EnvironmentType type;
@@ -223,6 +224,25 @@ class _DashboardState extends State<Dashboard> {
     setState(() {});
   }
 
+  void rotate() {
+    bool portrait = MediaQuery.of(context).orientation == Orientation.portrait;
+    Logger.print("Rotating screen... (currently portrait: $portrait)");
+
+    if (portrait) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    } else {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+    }
+
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final double iconSize = 24;
@@ -291,6 +311,7 @@ class _DashboardState extends State<Dashboard> {
                               content: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
+                                  SizedBox(width: context.screenSize.width * 0.9),
                                   if (sleepTimer > 0)
                                   Text("-${formatDuration(sleepTimer)} Remaining (${DateFormat("MMMM d 'at' h:mm a").format(DateTime.now().add(Duration(seconds: sleepTimer)))})"),
                                   if (sleepTimer <= 0)
@@ -303,7 +324,7 @@ class _DashboardState extends State<Dashboard> {
                                   Text("Note: The sleep timer won't do anything because wakelock is already disabled."),
                                   if (wakelockEnabled == null)
                                   Text("Note: Wakelock is currently not functional, so the sleep timer will have no effect."),
-                                  Slider(value: value.clamp(60, 24 * 60 * 60).toDouble(), min: 60, max: 24 * 60 * 60, divisions: 1439, onChanged: (x) {
+                                  Slider(value: value.clamp(60, maxSleepTimer * 60 * 60).toDouble(), min: 60, max: maxSleepTimer * 60 * 60, divisions: 1439, onChanged: (x) {
                                     value = x.toInt();
                                     setState(() {});
                                   }),
@@ -357,12 +378,18 @@ class _DashboardState extends State<Dashboard> {
               ),
             ),
           ),
+          if (settings != null)
           Builder(
             builder: (context) {
               double maxLoading = 3;
               double sizeMultiplier = mapRange(context.screenSize.width.clamp(100, 2000), inMin: 100, inMax: 2000, outMin: 0.5, outMax: 4);
 
-              return Center(
+              return Align(
+                alignment: switch (settings!.alignment) {
+                  DashboardAlignment.center => Alignment.center,
+                  DashboardAlignment.left => Alignment.centerLeft,
+                  DashboardAlignment.right => Alignment.centerRight,
+                },
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -407,6 +434,11 @@ class _DashboardState extends State<Dashboard> {
                             child: CircularProgressIndicator(),
                           ) : Icon(Icons.refresh, size: iconSize)),
                         ),
+                        if (widget.type == EnvironmentType.mobile)
+                        Tooltip(
+                          message: "Rotate the screen",
+                          child: IconButton(onPressed: () => rotate(), icon: Icon(Icons.rotate_90_degrees_cw)),
+                        ),
                         if (wakelockEnabled != null)
                         Tooltip(
                           message: "Wakelock ${wakelockEnabled! ? "Enabled" : "Disabled"}",
@@ -424,6 +456,7 @@ class _DashboardState extends State<Dashboard> {
                         ),
                       ],
                     ),
+                    SizedBox(width: 8 * sizeMultiplier),
                   ],
                 ),
               );

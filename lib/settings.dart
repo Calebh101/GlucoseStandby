@@ -7,16 +7,24 @@ import 'package:settings_ui/settings_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:styled_logger/styled_logger.dart';
 
+enum DashboardAlignment {
+  center,
+  left,
+  right,
+}
+
 class Settings {
   bool showTimer;
+  DashboardAlignment alignment;
   Bounderies bounderies;
   Autodim? autodim;
 
-  Settings({required this.autodim, required this.bounderies, required this.showTimer});
+  Settings({required this.autodim, required this.bounderies, required this.showTimer, required this.alignment});
 
   static Settings fromPrefs(SharedPreferences prefs) {
     return Settings(
       showTimer: prefs.getBool("showTimer") ?? true,
+      alignment: DashboardAlignment.values[prefs.getInt("alignment") ?? DashboardAlignment.center.index],
       bounderies: Bounderies(
         high: prefs.getInt("high") ?? 180,
         low: prefs.getInt("low") ?? 70,
@@ -33,6 +41,7 @@ class Settings {
   void save(SharedPreferences prefs) {
     Logger.print("Saving settings...");
     prefs.setBool("showTimer", showTimer);
+    prefs.setInt("alignment", alignment.index);
     bounderies.save(prefs);
     autodim.save(prefs);
   }
@@ -250,6 +259,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
               SettingsTile.switchTile(
                 title: Text("Show Timer"),
                 description: Text("Show how long has passed since the last received reading."),
+                leading: Icon(Icons.timer),
                 initialValue: widget.settings.showTimer,
                 onToggle: (value) async {
                   widget.settings.showTimer = value;
@@ -257,9 +267,57 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                   setState(() {});
                 },
               ),
+              SettingsTile(
+                title: Text("Alignment"),
+                description: Text("How to align the glucose widget on the home page."),
+                value: Text("Align ${widget.settings.alignment.name}"),
+                leading: Icon(switch (widget.settings.alignment) {
+                  DashboardAlignment.center => Icons.align_horizontal_center,
+                  DashboardAlignment.left => Icons.align_horizontal_left,
+                  DashboardAlignment.right => Icons.align_horizontal_right,
+                }),
+                onPressed: (context) async {
+                  await showDialog(context: context, builder: (context) => StatefulBuilder(
+                    builder: (context, setState) {
+                      return AlertDialog(
+                        content: SizedBox(
+                          width: double.maxFinite,
+                          height: 150,
+                          child: Center(
+                            child: ListView.builder(shrinkWrap: true, itemCount: DashboardAlignment.values.length, itemBuilder: (context, i) {
+                              final item = DashboardAlignment.values[i];
+
+                              return ListTile(
+                                leading: Icon(widget.settings.alignment == item ? Icons.check : switch (item) {
+                                  DashboardAlignment.center => Icons.align_horizontal_center,
+                                  DashboardAlignment.left => Icons.align_horizontal_left,
+                                  DashboardAlignment.right => Icons.align_horizontal_right,
+                                }),
+                                title: Text("Align ${item.name}"),
+                                onTap: () {
+                                  widget.settings.alignment = item;
+                                  setState(() {});
+                                },
+                              );
+                            }),
+                          ),
+                        ),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.of(context).pop(), child: Text("OK")),
+                        ],
+                      );
+                    }
+                  ));
+
+                  widget.settings.save(await SharedPreferences.getInstance());
+                  setState(() {});
+                },
+              ),
               SettingsTile.navigation(
                 title: Text("Dexcom Account"),
                 description: Text("Manage your Dexcom account credentials."),
+                value: Text(""),
+                leading: Icon(Icons.person),
                 onPressed: (context) async {
                   SimpleNavigator.navigate(context: context, page: LoginPage(prefs: await SharedPreferences.getInstance()));
                 },
