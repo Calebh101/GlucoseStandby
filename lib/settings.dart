@@ -15,15 +15,17 @@ enum DashboardAlignment {
 
 class Settings {
   bool showTimer;
+  bool defaultToWakelockOn;
   DashboardAlignment alignment;
   Bounderies bounderies;
   Autodim? autodim;
 
-  Settings({required this.autodim, required this.bounderies, required this.showTimer, required this.alignment});
+  Settings({required this.autodim, required this.bounderies, required this.showTimer, required this.alignment, required this.defaultToWakelockOn});
 
   static Settings fromPrefs(SharedPreferences prefs) {
     return Settings(
       showTimer: prefs.getBool("showTimer") ?? true,
+      defaultToWakelockOn: prefs.getBool("defaultToWakelockOn") ?? false,
       alignment: DashboardAlignment.values[prefs.getInt("alignment") ?? DashboardAlignment.center.index],
       bounderies: Bounderies(
         high: prefs.getInt("high") ?? 180,
@@ -41,6 +43,7 @@ class Settings {
   void save(SharedPreferences prefs) {
     Logger.print("Saving settings...");
     prefs.setBool("showTimer", showTimer);
+    prefs.setBool("defaultToWakelockOn", defaultToWakelockOn);
     prefs.setInt("alignment", alignment.index);
     bounderies.save(prefs);
     autodim.save(prefs);
@@ -263,6 +266,17 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                 initialValue: widget.settings.showTimer,
                 onToggle: (value) async {
                   widget.settings.showTimer = value;
+                  widget.settings.save(await SharedPreferences.getInstance());
+                  setState(() {});
+                },
+              ),
+              SettingsTile.switchTile(
+                title: Text("Default to Wakelock On"),
+                description: Text("When the app is opened, wakelock is turned on automatically. If this is not enabled, wakelock defaults to what it was at last time you used the app."),
+                leading: Icon(Icons.lightbulb),
+                initialValue: widget.settings.showTimer,
+                onToggle: (value) async {
+                  widget.settings.defaultToWakelockOn = value;
                   widget.settings.save(await SharedPreferences.getInstance());
                   setState(() {});
                 },
