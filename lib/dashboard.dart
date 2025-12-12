@@ -368,6 +368,7 @@ class _DashboardState extends State<Dashboard> {
                   children: [
                     if (readings?.$1 != null)
                     ReadingWidget(reading: readings!.$1!, settings: settings, size: 64 * sizeMultiplier),
+                    SizedBox(width: 8 * sizeMultiplier),
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
