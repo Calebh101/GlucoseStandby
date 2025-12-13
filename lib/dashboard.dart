@@ -137,6 +137,10 @@ class _DashboardState extends State<Dashboard> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       reloadSettings(true);
       initWakelock();
+
+      if (settings!.defaultToWakelockOn) {
+        setWakelock(true);
+      }
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -201,6 +205,14 @@ class _DashboardState extends State<Dashboard> {
       setState(() {});
     }, onTimerChange: (time) {
       setState(() {});
+    }, onError: (e) {
+      Logger.warn("Dexcom stream error: $e");
+
+      if (loading == 1) {
+        loading = 0;
+        setState(() {});
+        SnackBarManager.show(context, "Unable to log in to your Dexcom account.");
+      }
     });
 
     provider!.refresh();
@@ -402,80 +414,82 @@ class _DashboardState extends State<Dashboard> {
               double maxLoading = 3;
               double sizeMultiplier = mapRange(context.screenSize.width.clamp(100, 2000), inMin: 100, inMax: 2000, outMin: 0.5, outMax: 4);
 
-              return Align(
-                alignment: switch (settings!.alignment) {
-                  DashboardAlignment.center => Alignment.center,
-                  DashboardAlignment.left => Alignment.centerLeft,
-                  DashboardAlignment.right => Alignment.centerRight,
-                },
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (readings?.$1 != null)
-                    ReadingWidget(reading: readings!.$1!, settings: settings, size: 64 * sizeMultiplier),
-                    SizedBox(width: 8 * sizeMultiplier),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (readings?.$2 != null)
-                        ReadingWidget(reading: readings!.$2!, settings: settings, size: 32 * sizeMultiplier),
-                        if ((settings?.showTimer ?? true) && readings != null && provider?.time != null)
-                        if (!isOld)
-                        Text("-${formatDuration(provider!.time)}", style: TextStyle(color: timerToColor(provider!.time), fontSize: 24 * sizeMultiplier))
-                        else
-                        Text("Old", style: TextStyle(color: Colors.red, fontSize: 24 * sizeMultiplier)),
-                      ],
-                    ),
-                    SizedBox(width: 8 * sizeMultiplier),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (loading > 0 && loading < maxLoading)
-                        Container(
-                          width: iconSize,
-                          height: 4,
-                          child: LinearProgressIndicator(
-                            value: loading / maxLoading,
-                          ),
-                        ),
-                        Tooltip(
-                          message: loading > 0 ? "Refreshing" : "Refresh",
-                          child: IconButton(onPressed: () async {
-                            loading = 3;
-                            setState(() {});
-                            await reloadSettings();
-                            provider?.refresh();
-                            setState(() {});
-                          }, icon: loading > 0 ? Container(
+              return SafeArea(
+                child: Align(
+                  alignment: switch (settings!.alignment) {
+                    DashboardAlignment.center => Alignment.center,
+                    DashboardAlignment.left => Alignment.centerLeft,
+                    DashboardAlignment.right => Alignment.centerRight,
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (readings?.$1 != null)
+                      ReadingWidget(reading: readings!.$1!, settings: settings, size: 64 * sizeMultiplier),
+                      SizedBox(width: 8 * sizeMultiplier),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (readings?.$2 != null)
+                          ReadingWidget(reading: readings!.$2!, settings: settings, size: 32 * sizeMultiplier),
+                          if ((settings?.showTimer ?? true) && readings != null && provider?.time != null)
+                          if (!isOld)
+                          Text("-${formatDuration(provider!.time)}", style: TextStyle(color: timerToColor(provider!.time), fontSize: 24 * sizeMultiplier))
+                          else
+                          Text("Old", style: TextStyle(color: Colors.red, fontSize: 24 * sizeMultiplier)),
+                        ],
+                      ),
+                      SizedBox(width: 8 * sizeMultiplier),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (loading > 0 && loading < maxLoading)
+                          Container(
                             width: iconSize,
-                            height: iconSize,
-                            child: CircularProgressIndicator(),
-                          ) : Icon(Icons.refresh, size: iconSize)),
-                        ),
-                        if (widget.type == EnvironmentType.mobile)
-                        Tooltip(
-                          message: "Rotate the screen",
-                          child: IconButton(onPressed: () => rotate(), icon: Icon(Icons.rotate_90_degrees_cw)),
-                        ),
-                        if (wakelockEnabled != null)
-                        Tooltip(
-                          message: "Wakelock ${wakelockEnabled! ? "Enabled" : "Disabled"}",
-                          child: IconButton(onPressed: () async {
-                            await setWakelock(!wakelockEnabled!);
-                            wakelockEnabled = await WakelockPlus.enabled;
-                          }, icon: Icon(wakelockEnabled! ? Icons.lock_outline : Icons.lock_open)),
-                        ),
-                        Tooltip(
-                          message: "Toggle Fullscreen",
-                          child: IconButton(onPressed: () async {
-                            await setFullscreen(!isFullscreen);
-                            if (Environment.isDesktop) isFullscreen = await windowManager.isFullScreen();
-                          }, icon: Icon(isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen)),
-                        ),
-                      ],
-                    ),
-                    SizedBox(width: 8 * sizeMultiplier),
-                  ],
+                            height: 4,
+                            child: LinearProgressIndicator(
+                              value: loading / maxLoading,
+                            ),
+                          ),
+                          Tooltip(
+                            message: loading > 0 ? "Refreshing" : "Refresh",
+                            child: IconButton(onPressed: () async {
+                              loading = 3;
+                              setState(() {});
+                              await reloadSettings();
+                              provider?.refresh();
+                              setState(() {});
+                            }, icon: loading > 0 ? Container(
+                              width: iconSize,
+                              height: iconSize,
+                              child: CircularProgressIndicator(),
+                            ) : Icon(Icons.refresh, size: iconSize)),
+                          ),
+                          if (widget.type == EnvironmentType.mobile)
+                          Tooltip(
+                            message: "Rotate the screen",
+                            child: IconButton(onPressed: () => rotate(), icon: Icon(Icons.rotate_90_degrees_cw)),
+                          ),
+                          if (wakelockEnabled != null)
+                          Tooltip(
+                            message: "Wakelock ${wakelockEnabled! ? "Enabled" : "Disabled"}",
+                            child: IconButton(onPressed: () async {
+                              await setWakelock(!wakelockEnabled!);
+                              wakelockEnabled = await WakelockPlus.enabled;
+                            }, icon: Icon(wakelockEnabled! ? Icons.lock_outline : Icons.lock_open)),
+                          ),
+                          Tooltip(
+                            message: "Toggle Fullscreen",
+                            child: IconButton(onPressed: () async {
+                              await setFullscreen(!isFullscreen);
+                              if (Environment.isDesktop) isFullscreen = await windowManager.isFullScreen();
+                            }, icon: Icon(isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen)),
+                          ),
+                        ],
+                      ),
+                      SizedBox(width: 8 * sizeMultiplier),
+                    ],
+                  ),
                 ),
               );
             }
