@@ -29,6 +29,7 @@ dependencies:
   flutter_window_close: ^1.3.0
 
   dexcom: 1.1.1
+  native_device_orientation: ^2.1.0
     #path: /home/caleb/projects/other/dexcom/dart # debug
 
 dev_dependencies:

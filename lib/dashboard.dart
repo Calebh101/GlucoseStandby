@@ -116,8 +116,22 @@ class _DashboardState extends State<Dashboard> {
     await prefs.setBool("wakelock", value);
   }
 
+  void resetOrientation() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+
+      setState(() {});
+    });
+  }
+
   @override
   void initState() {
+    resetOrientation();
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -233,11 +247,15 @@ class _DashboardState extends State<Dashboard> {
         DeviceOrientation.landscapeLeft,
         DeviceOrientation.landscapeRight,
       ]);
+
+      resetOrientation();
     } else {
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
         DeviceOrientation.portraitDown,
       ]);
+
+      resetOrientation();
     }
 
     setState(() {});
