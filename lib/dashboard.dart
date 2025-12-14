@@ -19,7 +19,7 @@ import 'package:universal_html/html.dart' as html;
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:window_manager/window_manager.dart';
 
-const bool dexcomDebug = false;
+const bool dexcomDebug = true;
 const int maxSleepTimer = 12; // hours
 const int maxFakeSleep = 12; // hours
 
@@ -121,22 +121,8 @@ class _DashboardState extends State<Dashboard> {
     await prefs.setBool("wakelock", value);
   }
 
-  void resetOrientation() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-        DeviceOrientation.portraitUp,
-        DeviceOrientation.portraitDown,
-      ]);
-
-      setState(() {});
-    });
-  }
-
   @override
   void initState() {
-    resetOrientation();
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -214,8 +200,8 @@ class _DashboardState extends State<Dashboard> {
     }, onError: (e) {
       Logger.warn("Dexcom stream error: $e");
 
-      if (loading == 1) {
-        loading = 0;
+      if (e is DexcomInitializationError) {
+        loading = -1;
         setState(() {});
         SnackBarManager.show(context, "Unable to log in to your Dexcom account.");
       }
@@ -265,15 +251,11 @@ class _DashboardState extends State<Dashboard> {
         DeviceOrientation.landscapeLeft,
         DeviceOrientation.landscapeRight,
       ]);
-
-      resetOrientation();
     } else {
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
         DeviceOrientation.portraitDown,
       ]);
-
-      resetOrientation();
     }
 
     setState(() {});
@@ -414,7 +396,7 @@ class _DashboardState extends State<Dashboard> {
               ),
             ),
           ),
-          if (settings != null)
+          if (settings != null && loading >= 0)
           Builder(
             builder: (context) {
               double maxLoading = 3;
@@ -499,6 +481,14 @@ class _DashboardState extends State<Dashboard> {
                 ),
               );
             }
+          ),
+          if (loading == -1)
+          Center(
+            child: Icon(
+              Icons.warning_amber_rounded,
+              color: Colors.red,
+              size: 64,
+            ),
           ),
           Positioned.fill(
             child: IgnorePointer(
