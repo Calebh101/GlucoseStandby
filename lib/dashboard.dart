@@ -97,7 +97,7 @@ class _DashboardState extends State<Dashboard> {
       Logger.print("Initializing wakelock...");
       SharedPreferences prefs = await SharedPreferences.getInstance();
       wakelockEnabled = await WakelockPlus.enabled;
-      await setWakelock(prefs.getBool("wakelock") ?? wakelockEnabled!);
+      await setWakelock(settings!.defaultToWakelockOn ? true : (prefs.getBool("wakelock") ?? wakelockEnabled!));
       setState(() {});
     } catch (e) {
       wakelockEnabled = null;
@@ -127,11 +127,7 @@ class _DashboardState extends State<Dashboard> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await reloadSettings(true);
-      initWakelock();
-
-      if (settings!.defaultToWakelockOn) {
-        setWakelock(true);
-      }
+      await initWakelock();
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {

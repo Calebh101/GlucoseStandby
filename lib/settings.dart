@@ -256,7 +256,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                 title: Text("Default to Wakelock On"),
                 description: Text("When the app is opened, wakelock is turned on automatically. If this is not enabled, wakelock defaults to what it was at last time you used the app."),
                 leading: Icon(Icons.lightbulb),
-                initialValue: widget.settings.showTimer,
+                initialValue: widget.settings.defaultToWakelockOn,
                 onToggle: (value) async {
                   widget.settings.defaultToWakelockOn = value;
                   widget.settings.save(await SharedPreferences.getInstance());
