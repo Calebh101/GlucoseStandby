@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:GlucoseStandby/dashboard.dart';
+import 'package:GlucoseStandby/util.dart';
 import 'package:dexcom/dexcom.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -16,11 +20,11 @@ enum DashboardAlignment {
 class Settings {
   bool showTimer;
   bool defaultToWakelockOn;
+  int? fakeSleep; // seconds
   DashboardAlignment alignment;
   Bounderies bounderies;
-  Autodim? autodim;
 
-  Settings({required this.autodim, required this.bounderies, required this.showTimer, required this.alignment, required this.defaultToWakelockOn});
+  Settings({required this.fakeSleep, required this.bounderies, required this.showTimer, required this.alignment, required this.defaultToWakelockOn});
 
   static Settings fromPrefs(SharedPreferences prefs) {
     return Settings(
@@ -33,10 +37,7 @@ class Settings {
         superHigh: prefs.getInt("superHigh") ?? 240,
         superLow: prefs.getInt("superLow") ?? 55,
       ),
-      autodim: (prefs.getBool("autodim") ?? false) ? Autodim(
-        endValue: prefs.getDouble("autodimValue") ?? 0.75,
-        delay: prefs.getDouble("autodimDelay") ?? 300,
-      ) : null,
+      fakeSleep: (prefs.getInt("fakeSleep") ?? 0) <= 0 ? null : prefs.getInt("fakeSleep"),
     );
   }
 
@@ -45,8 +46,8 @@ class Settings {
     prefs.setBool("showTimer", showTimer);
     prefs.setBool("defaultToWakelockOn", defaultToWakelockOn);
     prefs.setInt("alignment", alignment.index);
+    prefs.setInt("fakeSleep", fakeSleep ?? 0);
     bounderies.save(prefs);
-    autodim.save(prefs);
   }
 }
 
@@ -64,25 +65,6 @@ class Bounderies {
     prefs.setInt("high", high);
     prefs.setInt("superLow", superLow);
     prefs.setInt("superHigh", superHigh);
-  }
-}
-
-class Autodim {
-  double endValue; // 0 being darkest, 1 being brightest
-  double delay; // seconds
-
-  Autodim({required this.endValue, required this.delay});
-}
-
-extension on Autodim? {
-  void save(SharedPreferences prefs) {
-    if (this != null) {
-      prefs.setBool("autodim", true);
-      prefs.setDouble("autodimValue", this!.endValue);
-      prefs.setDouble("autodimDelay", this!.delay);
-    } else {
-      prefs.setBool("autodim", false);
-    }
   }
 }
 
@@ -282,6 +264,73 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                 },
               ),
               SettingsTile(
+                title: Text("Fake Sleep"),
+                description: Text("How long to wait before fake sleeping, or making the screen completely black. This can be combined with the sleep timer."),
+                value: Text(widget.settings.fakeSleep != null ? formatDuration(widget.settings.fakeSleep!) : "Off"),
+                leading: Icon(Icons.bed_outlined),
+                onPressed: (context) async {
+                  int value = widget.settings.fakeSleep ?? 0;
+
+                  bool? result = await showDialog<bool>(context: context, builder: (context) => StatefulBuilder(
+                    builder: (context, setState) {
+                      Timer timer = Timer.periodic(Duration(milliseconds: 1000), (timer) {
+                        if (!context.mounted) return timer.cancel();
+                        setState(() {});
+                      });
+
+                      return AlertDialog(
+                        title: Text("Fake Sleep"),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(width: context.screenSize.width * 0.9),
+                            if (value > 0)
+                            Text("+${formatDuration(value)}")
+                            else
+                            Text("Off"),
+                            Slider(value: value.clamp(60, maxFakeSleep * 60 * 60).toDouble(), min: 60, max: maxFakeSleep * 60 * 60, divisions: 1439, onChanged: (x) {
+                              value = x.toInt();
+                              setState(() {});
+                            }, activeColor: sliderActiveColor, inactiveColor: sliderInactiveColor),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                TextButton(onPressed: () {
+                                  value = 0;
+                                  setState(() {});
+                                }, child: Text("Turn Off")),
+                              ],
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(onPressed: () {
+                            timer.cancel();
+                            Navigator.of(context).pop(false);
+                          }, child: Text("Cancel")),
+                          TextButton(onPressed: () {
+                            timer.cancel();
+                            Navigator.of(context).pop(true);
+                          }, child: Text("OK")),
+                        ],
+                      );
+                    }
+                  ));
+
+                  if (result == true) {
+                    if (value <= 0) {
+                      widget.settings.fakeSleep = null;
+                    } else {
+                      widget.settings.fakeSleep = value;
+                    }
+
+                    Logger.print("Set fake sleep to ${widget.settings.fakeSleep}s");
+                    widget.settings.save(await SharedPreferences.getInstance());
+                    setState(() {});
+                  }
+                },
+              ),
+              SettingsTile(
                 title: Text("Alignment"),
                 description: Text("How to align the glucose widget on the home page."),
                 value: Text("Align ${widget.settings.alignment.name}"),
@@ -329,8 +378,6 @@ class _SettingsWidgetState extends State<SettingsWidget> {
               ),
               SettingsTile.navigation(
                 title: Text("Dexcom Account"),
-                description: Text("Manage your Dexcom account credentials."),
-                value: Text(""),
                 leading: Icon(Icons.person),
                 onPressed: (context) async {
                   SimpleNavigator.navigate(context: context, page: LoginPage(prefs: await SharedPreferences.getInstance()));

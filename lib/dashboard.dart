@@ -21,6 +21,10 @@ import 'package:window_manager/window_manager.dart';
 
 const bool dexcomDebug = false;
 const int maxSleepTimer = 12; // hours
+const int maxFakeSleep = 12; // hours
+
+final Color sliderActiveColor = Colors.redAccent;
+final Color sliderInactiveColor = Colors.redAccent.shade100.withValues(alpha: 0.5);
 
 class Dashboard extends StatefulWidget {
   final EnvironmentType type;
@@ -38,11 +42,12 @@ class _DashboardState extends State<Dashboard> {
   bool? wakelockEnabled = false;
   bool isFullscreen = false;
   int sleepTimer = 0;
+  int inactive = 0;
   bool isOld = true;
   double dim = 0;
 
   Timer? timer;
-  Timer? sleepTimerTimer;
+  Timer? periodicTimer;
 
   // 0: Not loading
   // 1: Fetching account ID
@@ -134,8 +139,8 @@ class _DashboardState extends State<Dashboard> {
     resetOrientation();
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      reloadSettings(true);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await reloadSettings(true);
       initWakelock();
 
       if (settings!.defaultToWakelockOn) {
@@ -167,12 +172,13 @@ class _DashboardState extends State<Dashboard> {
       });
     }
 
-    sleepTimerTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+    periodicTimer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (sleepTimer > 0) {
         sleepTimer--;
         if (sleepTimer == 0) onSleep();
       }
 
+      inactive++;
       setState(() {});
     });
   }
@@ -221,7 +227,7 @@ class _DashboardState extends State<Dashboard> {
   @override
   void dispose() {
     timer?.cancel();
-    sleepTimerTimer?.cancel();
+    periodicTimer?.cancel();
 
     provider?.close();
     super.dispose();
@@ -312,7 +318,7 @@ class _DashboardState extends State<Dashboard> {
                               Slider(value: (1 - dim) * 100, min: 0, max: 100, onChanged: (value) {
                                 dim = 1 - (value / 100);
                                 setState(() {});
-                              }, activeColor: Colors.redAccent, inactiveColor: Colors.redAccent.shade100.withValues(alpha: 0.7)),
+                              }, activeColor: sliderActiveColor, inactiveColor: sliderInactiveColor),
                               SizedBox(
                                 height: 80,
                                 child: dim > 0.9 ? Center(child: Text("Warning! Setting your brightness to this could make the screen unseeable!")) : null,
@@ -357,7 +363,7 @@ class _DashboardState extends State<Dashboard> {
                                   Slider(value: value.clamp(60, maxSleepTimer * 60 * 60).toDouble(), min: 60, max: maxSleepTimer * 60 * 60, divisions: 1439, onChanged: (x) {
                                     value = x.toInt();
                                     setState(() {});
-                                  }, activeColor: Colors.redAccent, inactiveColor: Colors.redAccent.shade100.withValues(alpha: 0.7)),
+                                  }, activeColor: sliderActiveColor, inactiveColor: sliderInactiveColor),
                                   Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -496,8 +502,12 @@ class _DashboardState extends State<Dashboard> {
           ),
           Positioned.fill(
             child: IgnorePointer(
-              child: Container(
-                color: Colors.black.withOpacity(dim),
+              child: AnimatedOpacity(
+                opacity: (settings?.fakeSleep != null && inactive > settings!.fakeSleep!) ? 1 : dim,
+                duration: Duration(milliseconds: 300),
+                child: Container(
+                  color: Colors.black,
+                ),
               ),
             ),
           ),
@@ -506,6 +516,8 @@ class _DashboardState extends State<Dashboard> {
               behavior: HitTestBehavior.translucent,
               onPointerDown: (event) {
                 Logger.print("Screen tapped");
+                inactive = 0;
+                setState(() {});
               },
             ),
           ),
