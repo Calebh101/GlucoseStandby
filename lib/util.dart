@@ -6,13 +6,13 @@ Color? readingToColor(DexcomReading reading, Settings settings) {
   final v = reading.value; // value
   final b = settings.bounderies; // bounderies
 
-  if (v > b.superHigh) {
+  if (v >= b.superHigh) {
     return Colors.red;
-  } else if (v > b.high) {
+  } else if (v >= b.high) {
     return Colors.orange;
-  } else if (v < b.superLow) {
+  } else if (v <= b.superLow) {
     return Colors.red;
-  } else if (v < b.low) {
+  } else if (v <= b.low) {
     return Colors.orange;
   } else {
     return Colors.green;
@@ -20,10 +20,12 @@ Color? readingToColor(DexcomReading reading, Settings settings) {
 }
 
 Color? timerToColor(int seconds) {
-  if (seconds < 240) {
+  if (seconds <= 240) {
     return Colors.green;
-  } else if (seconds < 360) {
+  } else if (seconds <= 360) {
     return Colors.yellow;
+  } else if (seconds <= 600) {
+    return Colors.orange;
   } else {
     return Colors.red;
   }

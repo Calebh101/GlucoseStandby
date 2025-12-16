@@ -6,6 +6,7 @@ import 'package:dexcom/dexcom.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_environments_plus/flutter_environments_plus.dart';
 import 'package:localpkg_flutter/localpkg.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -376,9 +377,16 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                   setState(() {});
                 },
               ),
-              SettingsTile.navigation(
+            ],
+          ),
+          SettingsSection(
+            title: Text("Account"),
+            tiles: [
+              SettingsTile(
                 title: Text("Dexcom Account"),
+                description: Text("Manage your Dexcom account credentials. These are never sent anywhere, other than Dexcom's servers."),
                 leading: Icon(Icons.person),
+                trailing: Icon(Environment.isIOS ? Icons.arrow_forward_ios : Icons.arrow_forward),
                 onPressed: (context) async {
                   SimpleNavigator.navigate(context: context, page: LoginPage(prefs: await SharedPreferences.getInstance()));
                 },

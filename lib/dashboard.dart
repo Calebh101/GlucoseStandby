@@ -19,9 +19,11 @@ import 'package:universal_html/html.dart' as html;
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:window_manager/window_manager.dart';
 
-const bool dexcomDebug = true;
-const int maxSleepTimer = 12; // hours
-const int maxFakeSleep = 12; // hours
+const bool enableRotateScreenOption = false;
+const bool dexcomDebug = false;
+
+const int maxSleepTimer = 12;  // hours
+const int maxFakeSleep = 12;   // hours
 
 final Color sliderActiveColor = Colors.redAccent;
 final Color sliderInactiveColor = Colors.redAccent.shade100.withValues(alpha: 0.5);
@@ -449,7 +451,7 @@ class _DashboardState extends State<Dashboard> {
                               child: CircularProgressIndicator(),
                             ) : Icon(Icons.refresh, size: iconSize)),
                           ),
-                          if (widget.type == EnvironmentType.mobile)
+                          if (enableRotateScreenOption && widget.type == EnvironmentType.mobile)
                           Tooltip(
                             message: "Rotate the screen",
                             child: IconButton(onPressed: () => rotate(), icon: Icon(Icons.rotate_90_degrees_cw)),
@@ -522,7 +524,7 @@ class ReadingWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: size * 2.5,
+      width: size * 2.6,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
