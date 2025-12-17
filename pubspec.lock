@@ -116,10 +116,9 @@ packages:
   dexcom:
     dependency: "direct main"
     description:
-      name: dexcom
-      sha256: "07b03d16db3fdb154a762ad684919fbb3c99d71d73e3a0fd007a1a333ee02186"
-      url: "https://pub.dev"
-    source: hosted
+      path: "/home/caleb/projects/other/dexcom"
+      relative: false
+    source: path
     version: "1.1.3"
   fake_async:
     dependency: transitive

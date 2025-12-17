@@ -28,9 +28,9 @@ dependencies:
   settings_ui: ^2.0.2
   flutter_window_close: ^1.3.0
 
-  dexcom: 1.1.3
-    #path: /home/caleb/projects/other/dexcom/dart # Linux debug
-    #path: /Users/caleb/Projects/other/dexcom/dart # macOS debug
+  dexcom: 1.1.4
+    #path: /home/caleb/projects/other/dexcom # Linux debug
+    #path: /Users/caleb/Projects/other/dexcom # macOS debug
 
 dev_dependencies:
   flutter_test:
