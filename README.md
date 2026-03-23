@@ -40,3 +40,7 @@ String _getBaseUrl(DexcomRegion region) {
 The package uses only these URLs and endpoints for its data. Note that your username *and* password are needed for these endpoints, and those are stored in plain text *on your device*.
 
 For a detailed breakdown of these endpoints, check out my [documentation](https://github.com/Calebh101/dexcom/blob/main/README.md) on this. (Yes I made this too haha)
+
+## Support
+
+Discord: https://discord.gg/gbZyPuqZ6n
